@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "464883505849",
+    "firebase_url": "https://reflvy-d3e67-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "reflvy-d3e67",
+    "storage_bucket": "reflvy-d3e67.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:464883505849:android:316fb2041b496e12249968",
+        "android_client_info": {
+          "package_name": "com.example.paradise_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "464883505849-7k5egi5sdcp4vi2ohr1kij602p50v9p7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgXKB2K0w1WCrrFJbju-uuCBO8zwch68I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "464883505849-7k5egi5sdcp4vi2ohr1kij602p50v9p7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
