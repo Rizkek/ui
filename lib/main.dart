@@ -17,6 +17,11 @@ import 'views/screens/dashboard/history_detection_log.dart';
 // import 'services/notifications/notification_service.dart';
 
 import 'views/screens/profile/change_password_screen.dart';
+import 'views/screens/monitoring/detection_realtime_page.dart';
+import 'views/screens/profile/pin_settings_screen.dart';
+import 'views/screens/settings/theme_settings_screen.dart';
+import 'views/screens/settings/notification_settings_screen.dart';
+import 'views/screens/onboarding/permission_request_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -96,6 +101,25 @@ class MyApp extends StatelessWidget {
               type: args['type'] ?? 'weekly',
             );
           },
+        ),
+        GetPage(
+          name: '/detection-realtime',
+          page: () => const DetectionRealtimePage(),
+        ),
+        GetPage(name: '/pin-settings', page: () => const PINSettingsScreen()),
+        GetPage(
+          name: '/theme-settings',
+          page: () => const ThemeSettingsScreen(),
+        ),
+        GetPage(
+          name: '/notification-settings',
+          page: () => const NotificationSettingsScreen(),
+        ),
+        GetPage(
+          name: '/permission-request',
+          page: () => PermissionRequestScreen(
+            onComplete: () => Get.offAllNamed('/home'),
+          ),
         ),
       ],
     );

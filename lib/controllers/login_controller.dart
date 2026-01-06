@@ -224,6 +224,136 @@ class LoginController {
     }
   }
 
+  // Login with explicitly selected role (from UI selection)
+  Future<LoginResult> loginWithRole(
+    LoginCredentials credentials, {
+    required String selectedRole,
+  }) async {
+    if (!validateCredentials(credentials)) {
+      return LoginResult(
+        success: false,
+        message: _errorMessage ?? 'Validation failed',
+        type: LoginResultType.validationError,
+      );
+    }
+
+    _setState(LoginState.loading);
+
+    try {
+      // DEMO MODE: Use selected role instead of auto-detecting
+      if (DEMO_MODE) {
+        await Future.delayed(
+          const Duration(seconds: 1),
+        ); // Simulate network delay
+
+        _currentUser = LoginUser(
+          uid: 'demo_uid_123',
+          email: credentials.email,
+          displayName: DemoData.demoName,
+          token: DemoData.demoToken,
+          refreshToken: 'demo_refresh_token',
+          loginTime: DateTime.now(),
+          isVerified: true,
+          gender: 'Laki-laki',
+          age: 25,
+          role: selectedRole, // Use the selected role from UI
+        );
+
+        await SecureStorageService.saveUserData(_currentUser!);
+
+        _setState(LoginState.success);
+
+        return LoginResult(
+          success: true,
+          message: 'Login berhasil! (Demo Mode)',
+          type: LoginResultType.success,
+          user: _currentUser,
+        );
+      }
+
+      // PRODUCTION MODE: Use Firebase with selected role
+      // Step 1: Login with Firebase
+      final firebaseUser = await _loginWithFirebase(credentials);
+
+      if (firebaseUser == null) {
+        throw Exception('Failed to login with Firebase');
+      }
+
+      // Step 2: Get Firebase JWT token and refresh token
+      final idToken = await firebaseUser.getIdToken();
+      final refreshToken = firebaseUser.refreshToken;
+
+      if (idToken == null) {
+        throw Exception('Failed to get authentication token');
+      }
+
+      // Step 3: Get profile data from API
+      final profileResult = await ProfileApiService.getProfile(idToken);
+
+      if (!profileResult['success']) {
+        throw Exception(
+          profileResult['message'] ?? 'Failed to get profile data',
+        );
+      }
+
+      final profileData = profileResult['data'];
+
+      // Derive display name with graceful fallbacks when backend doesn't return it
+      String deriveDisplayName(String email) {
+        final prefix = email.split('@').first;
+        if (prefix.isEmpty) return 'Pengguna';
+        // Simple title-case-ish: split by . _ - and capitalize first token
+        final parts = prefix.split(RegExp(r'[._-]+'));
+        final first = parts.isNotEmpty ? parts.first : prefix;
+        return first.isNotEmpty
+            ? first[0].toUpperCase() +
+                  (first.length > 1 ? first.substring(1) : '')
+            : 'Pengguna';
+      }
+
+      final computedDisplayName =
+          (profileData['display_name'] as String?)?.trim().isNotEmpty == true
+          ? (profileData['display_name'] as String).trim()
+          : (firebaseUser.displayName?.trim().isNotEmpty == true
+                ? firebaseUser.displayName!.trim()
+                : deriveDisplayName(firebaseUser.email ?? credentials.email));
+
+      // Step 4: Create LoginUser object with complete profile data
+      _currentUser = LoginUser(
+        uid: firebaseUser.uid,
+        email: firebaseUser.email ?? credentials.email,
+        displayName: computedDisplayName,
+        token: idToken,
+        refreshToken: refreshToken,
+        loginTime: DateTime.now(),
+        isVerified: profileData['is_verified'] ?? false,
+        gender: profileData['gender'],
+        age: profileData['age'],
+        role: selectedRole, // Use the selected role from UI
+      );
+
+      // Step 5: Save to secure storage
+      await SecureStorageService.saveUserData(_currentUser!);
+
+      _setState(LoginState.success);
+
+      return LoginResult(
+        success: true,
+        message: profileData['message'] ?? 'Login berhasil!',
+        type: LoginResultType.success,
+        user: _currentUser,
+      );
+    } catch (e) {
+      _setError(e.toString().replaceFirst('Exception: ', ''));
+
+      return LoginResult(
+        success: false,
+        message: _errorMessage ?? 'Terjadi kesalahan tidak dikenal',
+        type: LoginResultType.error,
+      );
+    }
+  }
+
   // Check if user is already logged in
   Future<LoginResult> checkLoginStatus() async {
     try {

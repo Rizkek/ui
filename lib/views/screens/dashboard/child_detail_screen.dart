@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import '../../../controllers/link_controller.dart';
+import '../../../services/test_popup_helper.dart';
 
 class ChildDetailScreen extends StatefulWidget {
   final LinkedChild child;
@@ -17,6 +18,10 @@ class _ChildDetailScreenState extends State<ChildDetailScreen>
   late TabController _tabController;
   String _selectedPeriod = 'Hari Ini';
 
+  // Hidden test feature - untuk mendeteksi tap ganda pada title
+  int _titleTapCount = 0;
+  DateTime? _lastTitleTapTime;
+
   @override
   void initState() {
     super.initState();
@@ -29,16 +34,39 @@ class _ChildDetailScreenState extends State<ChildDetailScreen>
     super.dispose();
   }
 
+  /// Handle tap ganda pada title untuk menampilkan test popup
+  void _handleTitleTap() {
+    final now = DateTime.now();
+
+    // Reset jika sudah lebih dari 500ms sejak tap terakhir
+    if (_lastTitleTapTime != null &&
+        now.difference(_lastTitleTapTime!).inMilliseconds > 500) {
+      _titleTapCount = 0;
+    }
+
+    _titleTapCount++;
+    _lastTitleTapTime = now;
+
+    // Jika tap 2x dalam 500ms, tampilkan test menu
+    if (_titleTapCount == 2) {
+      _titleTapCount = 0; // Reset
+      TestPopupHelper.showRiskLevelSelector(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(
-          'Detail ${widget.child.name}',
-          style: GoogleFonts.outfit(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+        title: GestureDetector(
+          onTap: _handleTitleTap,
+          child: Text(
+            'Detail ${widget.child.name}',
+            style: GoogleFonts.outfit(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         ),
         backgroundColor: const Color(0xFF2C3E50),

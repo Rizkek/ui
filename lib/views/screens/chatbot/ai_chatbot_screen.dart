@@ -69,22 +69,63 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
   String _getMockAiResponse(String userMessage) {
     final lowerMsg = userMessage.toLowerCase();
 
+    // Greeting
     if (lowerMsg.contains('halo') ||
         lowerMsg.contains('hai') ||
         lowerMsg.contains('hi')) {
-      return 'Halo juga! Ada yang bisa saya bantu hari ini? 😊';
-    } else if (lowerMsg.contains('aman')) {
-      return 'Paradise selalu menjaga keamanan digital kamu! Sistem proteksi kami aktif 24/7. Jika ada konten mencurigakan, kamu akan langsung mendapat peringatan.';
-    } else if (lowerMsg.contains('nsfw')) {
-      return 'Sistem deteksi NSFW kami menggunakan AI canggih untuk melindungi kamu dari konten yang tidak pantas. Ada 3 level: Low (Kuning), Medium (Oranye), dan High (Merah).';
-    } else if (lowerMsg.contains('orang tua') || lowerMsg.contains('parent')) {
-      return 'Orang tua bisa memantau aktivitas digital kamu untuk memastikan kamu aman. Mereka bisa mengatur level proteksi sesuai kebutuhan.';
-    } else if (lowerMsg.contains('terima kasih') ||
-        lowerMsg.contains('thanks')) {
-      return 'Sama-sama! Senang bisa membantu. Jangan ragu untuk bertanya kapan saja! ✨';
-    } else {
-      return 'Terima kasih atas pertanyaannya! Saya di sini untuk membantu kamu dengan pertanyaan seputar keamanan digital. Ada lagi yang ingin ditanyakan?';
+      return 'Halo juga! Ada yang bisa saya bantu hari ini? 😊\n\nSaya bisa membantu kamu dengan:\n• Analisis tren deteksi\n• Edukasi risiko konten\n• Saran aktivitas alternatif\n• Mini-counseling CBT';
     }
+
+    // YouTube Detection Analysis
+    if (lowerMsg.contains('youtube') && lowerMsg.contains('terdeteksi')) {
+      return '📊 **Analisis YouTube**\n\nDari data kamu, YouTube terdeteksi 12x minggu ini, mayoritas Medium Risk. Ini biasanya dari thumbnail video suggestive di recommendation feed.\n\n🧩 **Trigger yang perlu diwaspadai:**\n• Scroll feed tanpa tujuan spesifik\n• Waktu bosan (sore & malam)\n• Setelah stres dari aktivitas lain\n\n✅ **Strategi pencegahan:**\n• Set tujuan spesifik sebelum buka YouTube\n• Gunakan Search langsung, hindari feed\n• Aktifkan Restricted Mode di settings\n\nMau saya bantu set reminder untuk habit baru?';
+    }
+
+    // Trend Analysis
+    if (lowerMsg.contains('tren') ||
+        lowerMsg.contains('statistik') ||
+        lowerMsg.contains('data')) {
+      return '📈 **Analisis Tren Perilaku**\n\n7 Hari Terakhir:\n• Total deteksi: 45\n• Puncak aktivitas: Malam (20:00-23:00)\n• Aplikasi tersering: Instagram, YouTube\n• Risk level: 60% Low, 30% Medium, 10% High\n\n🎯 **Insight:**\nKamu cenderung terpapar lebih banyak saat lelah atau menjelang tidur. Ini pola umum yang bisa dicegah dengan:\n\n1. Set "digital curfew" jam 22:00\n2. Ganti scrolling dengan aktivitas relaksasi\n3. Gunakan mode fokus saat belajar/kerja\n\nMau saya buatkan action plan?';
+    }
+
+    // CBT Counseling
+    if (lowerMsg.contains('stres') ||
+        lowerMsg.contains('bosan') ||
+        lowerMsg.contains('susah')) {
+      return '🧠 **Mini-Counseling CBT**\n\nSaya paham kamu sedang merasa tidak nyaman. Mari kita lihat situasinya dengan pendekatan CBT:\n\n**1. Identifikasi Pemicu:**\nApa yang membuatmu merasa seperti ini? (stres, bosan, kesepian, dll)\n\n**2. Pola Pikir:**\nKonten digital sering jadi pelarian sementara, tapi tidak menyelesaikan akar masalah.\n\n**3. Alternatif Sehat:**\n• Physical: Jalan kaki 10 menit\n• Creative: Journaling, gambar\n• Social: Chat teman/keluarga\n• Spiritual: Meditasi, doa\n\nMana yang paling mungkin kamu lakukan sekarang?';
+    }
+
+    // Parent Mode
+    if (lowerMsg.contains('orang tua') || lowerMsg.contains('parent')) {
+      return '👨‍👩‍👧 **Mode Orang Tua**\n\nOrang tua bisa memantau aktivitas digital kamu untuk memastikan keamanan. Fitur yang tersedia:\n\n✓ Dashboard deteksi real-time\n✓ Laporan mingguan\n✓ PIN lock untuk monitoring\n✓ Notifikasi High Risk\n\nIni bukan untuk mengontrol, tapi untuk melindungi dan mendukung pertumbuhan digital yang sehat. Komunikasi terbuka dengan orang tua sangat penting!\n\nAda yang ingin kamu diskusikan tentang ini?';
+    }
+
+    // NSFW Education
+    if (lowerMsg.contains('nsfw') ||
+        lowerMsg.contains('pornografi') ||
+        lowerMsg.contains('konten')) {
+      return '🛡️ **Edukasi Konten NSFW**\n\nSistem deteksi kami menggunakan AI dengan 3 level:\n\n🟡 **Low Risk**: Borderline, suggestive ringan\n🟠 **Medium**: Semi-pornografi, erotis\n🔴 **High**: Pornografi eksplisit\n\n**Dampak Paparan Berulang:**\n• Mengubah persepsi relasi\n• Menurunkan kontrol impuls\n• Membentuk kebiasaan adiktif\n• Memengaruhi kesehatan mental\n\n**Kenapa Penting Dicegah:**\nOtak remaja masih berkembang, khususnya area decision-making. Paparan dini dapat mengubah pola reward system secara permanen.\n\nIngat: Butuh bantuan bukan berarti lemah. It takes strength to ask for help! 💪';
+    }
+
+    // Tips & Strategies
+    if (lowerMsg.contains('tips') ||
+        lowerMsg.contains('saran') ||
+        lowerMsg.contains('cara')) {
+      return '💡 **Tips Kontrol Digital**\n\n**Strategi Jangka Pendek:**\n1. 30-Second Rule: Tunggu 30 detik sebelum buka app\n2. Physical Distance: Taruh HP jauh saat belajar\n3. Notification Off: Matikan notif non-esensial\n\n**Strategi Jangka Panjang:**\n1. Build New Habits: Ganti scrolling dengan baca\n2. Accountability Partner: Ajak teman sama-sama\n3. Reward System: Beri hadiah untuk milestone\n\n**Emergency Plan:**\nSaat dorongan kuat muncul:\n→ Segera pindah ruangan\n→ Call trusted person\n→ Buka chatbot ini untuk dukungan\n\nMau fokus ke strategi yang mana?';
+    }
+
+    // Safety
+    if (lowerMsg.contains('aman')) {
+      return 'Paradise selalu menjaga keamanan digital kamu! 🛡️\n\nSistem proteksi aktif 24/7:\n✓ Real-time AI detection\n✓ CBT intervention otomatis\n✓ Activity logging\n✓ Parent notification (jika aktif)\n\nKamu juga bisa:\n• Cek history kapan saja\n• Analisis tren perilaku\n• Dapatkan counseling mini\n\nIngat: Kamu tidak sendirian dalam journey ini! 💙';
+    }
+
+    // Thanks
+    if (lowerMsg.contains('terima kasih') || lowerMsg.contains('thanks')) {
+      return 'Sama-sama! Senang bisa membantu. 🌟\n\nJangan ragu untuk chat kapan saja kamu:\n• Butuh support\n• Ingin analisis data\n• Mau curhat\n• Cari saran aktivitas\n\nI\'m here for you! Stay strong! 💪✨';
+    }
+
+    // Default
+    return 'Terima kasih atas pertanyaannya! 🤗\n\nSaya di sini untuk membantu kamu dengan:\n• Analisis deteksi & tren\n• Edukasi risiko konten\n• Mini-counseling CBT\n• Saran aktivitas alternatif\n• Support & motivation\n\nCoba tanyakan tentang:\n"Kenapa YouTube sering terdeteksi?"\n"Bagaimana tren deteksi saya?"\n"Tips untuk kontrol digital?"\n\nAda yang ingin kamu bahas?';
   }
 
   void _scrollToBottom() {

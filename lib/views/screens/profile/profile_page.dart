@@ -4,7 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import '../../../services/storage/secure_storage_service.dart';
 import '../../../controllers/link_controller.dart';
+import '../../../services/monitoring/auto_screenshot_service.dart';
+import '../../widgets/cbt_intervention_popup.dart';
 import '../auth/login_screen.dart';
+import 'dart:async';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -24,10 +27,26 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _tokenExpired = false;
   bool _updatingName = false;
 
+  // Monitoring dari Orang Tua
+  bool _parentalMonitoringEnabled = false;
+  Timer? _monitoringTimer;
+  AutoScreenshotService? _screenshotService;
+
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    // Initialize AutoScreenshotService jika belum ada
+    if (!Get.isRegistered<AutoScreenshotService>()) {
+      Get.put(AutoScreenshotService());
+    }
+    _screenshotService = Get.find<AutoScreenshotService>();
+  }
+
+  @override
+  void dispose() {
+    _monitoringTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadProfile() async {
@@ -230,6 +249,11 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _logout() async {
+    // Stop monitoring jika aktif
+    if (_parentalMonitoringEnabled) {
+      await _stopParentalMonitoring();
+    }
+
     await SecureStorageService.clearAllData();
     if (mounted) {
       Navigator.pushAndRemoveUntil(
@@ -238,6 +262,119 @@ class _ProfilePageState extends State<ProfilePage> {
         (route) => false,
       );
     }
+  }
+
+  // Toggle Monitoring dari Orang Tua
+  Future<void> _toggleParentalMonitoring(bool value) async {
+    setState(() {
+      _parentalMonitoringEnabled = value;
+    });
+
+    if (value) {
+      await _startParentalMonitoring();
+    } else {
+      await _stopParentalMonitoring();
+    }
+  }
+
+  // Mulai Monitoring dari Orang Tua
+  Future<void> _startParentalMonitoring() async {
+    try {
+      // Start auto screenshot service
+      await _screenshotService?.startAutoScreenshot();
+
+      // Tampilkan notifikasi pertama
+      Get.snackbar(
+        '✅ Monitoring Aktif',
+        'Monitoring dari orang tua telah diaktifkan',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+
+      // Trigger sequential popup demo: LOW → MEDIUM → HIGH
+      _triggerSequentialPopups();
+    } catch (e) {
+      Get.snackbar(
+        '❌ Error',
+        'Gagal memulai monitoring: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      setState(() {
+        _parentalMonitoringEnabled = false;
+      });
+    }
+  }
+
+  // Hentikan Monitoring dari Orang Tua
+  Future<void> _stopParentalMonitoring() async {
+    _monitoringTimer?.cancel();
+    _monitoringTimer = null;
+
+    await _screenshotService?.stopAutoScreenshot();
+
+    Get.snackbar(
+      'ℹ️ Monitoring Dihentikan',
+      'Monitoring dari orang tua telah dinonaktifkan',
+      backgroundColor: Colors.blue,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  // Trigger Sequential Popups untuk Demo (LOW → MEDIUM → HIGH)
+  void _triggerSequentialPopups() {
+    if (!mounted || !_parentalMonitoringEnabled) return;
+
+    // 3 detik setelah toggle ON → Popup LOW
+    Future.delayed(const Duration(seconds: 3), () {
+      if (!mounted || !_parentalMonitoringEnabled) return;
+      _showPopup('low', 'Instagram', 'Konten sensitif terdeteksi');
+
+      // 5 detik setelah popup LOW → Tutup LOW, tampilkan MEDIUM
+      Future.delayed(const Duration(seconds: 5), () {
+        if (!mounted || !_parentalMonitoringEnabled) return;
+        Get.back(); // Tutup popup LOW
+
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (!mounted || !_parentalMonitoringEnabled) return;
+          _showPopup('medium', 'TikTok', 'Konten berisiko terdeteksi');
+
+          // 5 detik setelah popup MEDIUM → Tutup MEDIUM, tampilkan HIGH
+          Future.delayed(const Duration(seconds: 5), () {
+            if (!mounted || !_parentalMonitoringEnabled) return;
+            Get.back(); // Tutup popup MEDIUM
+
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (!mounted || !_parentalMonitoringEnabled) return;
+              _showPopup('high', 'Browser', 'Konten pornografi terdeteksi');
+            });
+          });
+        });
+      });
+    });
+  }
+
+  // Show individual popup
+  void _showPopup(String level, String app, String content) {
+    if (!mounted || !_parentalMonitoringEnabled) return;
+
+    CBTInterventionPopup.show(
+      context: context,
+      riskLevel: level,
+      appName: app,
+      contentType: content,
+      onClose: () {
+        print('Popup $level closed');
+      },
+      onCloseApp: () {
+        print('Close app requested - Level: $level');
+      },
+      onOpenChatbot: () {
+        print('Open chatbot requested');
+      },
+    );
   }
 
   @override
@@ -390,6 +527,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
                           // Parent Link Section
                           _buildLinkToParentSection(),
+                          const SizedBox(height: 20),
+
+                          // Monitoring dari Orang Tua Section
+                          _buildParentalMonitoringSection(),
                           const SizedBox(height: 32),
 
                           // Logout Button
@@ -769,6 +910,129 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildParentalMonitoringSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _parentalMonitoringEnabled
+              ? const Color(0xFF10B981)
+              : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: _parentalMonitoringEnabled
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _parentalMonitoringEnabled
+                      ? const Color(0xFF10B981).withOpacity(0.1)
+                      : const Color(0xFF64748B).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  _parentalMonitoringEnabled
+                      ? Icons.visibility
+                      : Icons.visibility_off,
+                  size: 20,
+                  color: _parentalMonitoringEnabled
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Monitoring dari Orang Tua',
+                      style: GoogleFonts.outfit(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1E293B),
+                      ),
+                    ),
+                    Text(
+                      _parentalMonitoringEnabled ? 'Aktif' : 'Nonaktif',
+                      style: GoogleFonts.raleway(
+                        fontSize: 12,
+                        color: _parentalMonitoringEnabled
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Transform.scale(
+                scale: 0.9,
+                child: Switch(
+                  value: _parentalMonitoringEnabled,
+                  onChanged: _toggleParentalMonitoring,
+                  activeColor: const Color(0xFF10B981),
+                  activeTrackColor: const Color(0xFF10B981).withOpacity(0.3),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _parentalMonitoringEnabled
+                  ? const Color(0xFFDCFCE7)
+                  : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: _parentalMonitoringEnabled
+                      ? const Color(0xFF166534)
+                      : const Color(0xFF64748B),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _parentalMonitoringEnabled
+                        ? 'Sistem sedang merekam aktivitas layar dan mendeteksi konten berisiko secara real-time. Popup peringatan akan muncul otomatis.'
+                        : 'Aktifkan untuk memulai monitoring aktivitas layar oleh orang tua. Sistem akan mendeteksi dan memblokir konten tidak aman.',
+                    style: GoogleFonts.raleway(
+                      fontSize: 12,
+                      color: _parentalMonitoringEnabled
+                          ? const Color(0xFF166534)
+                          : const Color(0xFF64748B),
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

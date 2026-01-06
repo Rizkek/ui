@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
 import '../../../services/notifications/notification_service.dart';
 import '../../widgets/feature_item.dart';
 import '../../widgets/threat_alert_overlay.dart';
+import '../../widgets/cbt_intervention_popup.dart';
+import '../chatbot/ai_chatbot_screen.dart';
 
 class MonitoringPage extends StatefulWidget {
   const MonitoringPage({super.key});
@@ -108,6 +111,51 @@ class _MonitoringPageState extends State<MonitoringPage>
       appName: app,
       contentType: content,
     );
+
+    // Show CBT Intervention Popup untuk high risk
+    if (level == 'high') {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          CBTInterventionPopup.show(
+            context: context,
+            riskLevel: level,
+            appName: app,
+            contentType: content,
+            onClose: () {
+              print('Popup closed');
+            },
+            onCloseApp: () {
+              print('Close app requested');
+              // TODO: Implement close app functionality
+            },
+            onOpenChatbot: () {
+              Get.to(() => const AiChatbotScreen());
+            },
+          );
+        }
+      });
+    } else if (level == 'medium') {
+      // Show popup untuk medium risk juga
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          CBTInterventionPopup.show(
+            context: context,
+            riskLevel: level,
+            appName: app,
+            contentType: content,
+            onClose: () {
+              print('Popup closed');
+            },
+            onCloseApp: () {
+              print('Close app requested');
+            },
+            onOpenChatbot: () {
+              Get.to(() => const AiChatbotScreen());
+            },
+          );
+        }
+      });
+    }
   }
 
   Color _getThreatColor() {
@@ -204,7 +252,9 @@ class _MonitoringPageState extends State<MonitoringPage>
                             AnimatedBuilder(
                               animation: _pulseAnimation,
                               builder: (context, child) => Transform.scale(
-                                scale: isMonitoring ? _pulseAnimation.value : 1.0,
+                                scale: isMonitoring
+                                    ? _pulseAnimation.value
+                                    : 1.0,
                                 child: Container(
                                   width: 12,
                                   height: 12,
@@ -223,14 +273,17 @@ class _MonitoringPageState extends State<MonitoringPage>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    isMonitoring ? 'Monitoring aktif' : 'Monitoring tidak aktif',
+                                    isMonitoring
+                                        ? 'Monitoring aktif'
+                                        : 'Monitoring tidak aktif',
                                     style: GoogleFonts.inter(
                                       color: const Color(0xFF1F2937),
                                       fontSize: 18,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  if (isMonitoring && currentThreatLevel != 'safe')
+                                  if (isMonitoring &&
+                                      currentThreatLevel != 'safe')
                                     Text(
                                       'Status: ${_getThreatText()}',
                                       style: GoogleFonts.inter(
@@ -309,10 +362,11 @@ class _MonitoringPageState extends State<MonitoringPage>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: (isMonitoring
-                                        ? const Color(0xFFEF4444)
-                                        : const Color(0xFF3B82F6))
-                                    .withOpacity(0.3),
+                                color:
+                                    (isMonitoring
+                                            ? const Color(0xFFEF4444)
+                                            : const Color(0xFF3B82F6))
+                                        .withOpacity(0.3),
                                 blurRadius: 20,
                                 spreadRadius: 0,
                                 offset: const Offset(0, 8),

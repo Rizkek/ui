@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import '../../../controllers/login_controller.dart';
 import '../../../controllers/link_controller.dart';
+import '../../../services/storage/secure_storage_service.dart';
+import '../auth/login_screen.dart';
 import 'parent_settings_screen.dart';
 
 class ParentProfilePage extends StatefulWidget {
@@ -31,9 +33,34 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
   }
 
   void _logout() async {
-    final LoginController loginController = Get.find<LoginController>();
-    await loginController.logout();
-    Get.offAllNamed('/login');
+    try {
+      // Prefer using registered LoginController when available
+      if (Get.isRegistered<LoginController>()) {
+        final LoginController loginController = Get.find<LoginController>();
+        await loginController.logout();
+      } else {
+        // Fallback: clear secure storage directly
+        await SecureStorageService.clearAllData();
+      }
+
+      if (!mounted) return;
+
+      // Navigate to login screen and remove all previous routes
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      // Ensure storage is cleared even on error
+      await SecureStorageService.clearAllData();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
   }
 
   @override

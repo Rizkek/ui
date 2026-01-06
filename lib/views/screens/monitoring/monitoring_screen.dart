@@ -393,8 +393,24 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
         onTap: () {
           if (isRecording) {
             _screenshotService.stopAutoScreenshot();
+            Get.snackbar(
+              'ℹ️ Monitoring Dihentikan',
+              'Monitoring telah dinonaktifkan',
+              backgroundColor: Colors.blue,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 2),
+            );
           } else {
-            _screenshotService.startAutoScreenshot();
+            // Langsung set recording tanpa permission request
+            // Permission sudah diminta di toggle "Monitoring dari Orang Tua"
+            _screenshotService.isRecording.value = true;
+            Get.snackbar(
+              '✅ Monitoring Aktif',
+              'Monitoring telah diaktifkan. Screenshot akan diambil setiap 5 detik.',
+              backgroundColor: Colors.green,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 2),
+            );
           }
         },
         child: Container(
@@ -544,7 +560,10 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              screenshot['timestamp'].toString().substring(11, 19),
+                              screenshot['timestamp'].toString().substring(
+                                11,
+                                19,
+                              ),
                               style: GoogleFonts.raleway(
                                 color: const Color(0xFF94A3B8),
                                 fontSize: 11,

@@ -1,4 +1,4 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import '../../../models/login.dart';
@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String _selectedRole = 'child'; // 'child' atau 'parent'
 
   @override
   void dispose() {
@@ -98,7 +99,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _navigateToHome() {
-    Navigator.pushReplacementNamed(context, '/home');
+    if (_selectedRole == 'parent') {
+      Navigator.pushReplacementNamed(context, '/parent');
+    } else {
+      Navigator.pushReplacementNamed(context, '/child');
+    }
   }
 
   Future<void> _login() async {
@@ -118,7 +123,12 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         // Just for demo purposes, adding artificial delay to show animation
         await Future.delayed(const Duration(milliseconds: 1500));
-        final result = await _loginController.login(credentials);
+
+        // Pass selected role to login controller
+        final result = await _loginController.loginWithRole(
+          credentials,
+          selectedRole: _selectedRole,
+        );
 
         _hideLoadingDialog();
 
@@ -245,6 +255,119 @@ class _LoginScreenState extends State<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 10),
+                          // Role Selection
+                          Text(
+                            'Login Sebagai',
+                            style: GoogleFonts.raleway(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: const Color(0xFFF3F4F6),
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedRole = 'child';
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: _selectedRole == 'child'
+                                            ? const Color(0xFF3B82F6)
+                                            : Colors.transparent,
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.child_care,
+                                            color: _selectedRole == 'child'
+                                                ? Colors.white
+                                                : const Color(0xFF64748B),
+                                            size: 18,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Anak',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: _selectedRole == 'child'
+                                                  ? Colors.white
+                                                  : const Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedRole = 'parent';
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: _selectedRole == 'parent'
+                                            ? const Color(0xFF3B82F6)
+                                            : Colors.transparent,
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.family_restroom,
+                                            color: _selectedRole == 'parent'
+                                                ? Colors.white
+                                                : const Color(0xFF64748B),
+                                            size: 18,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Orang Tua',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: _selectedRole == 'parent'
+                                                  ? Colors.white
+                                                  : const Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
                           Text(
                             'Email',
                             style: GoogleFonts.raleway(
