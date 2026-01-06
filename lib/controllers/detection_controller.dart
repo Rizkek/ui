@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/risk_detection.dart';
 import '../models/parent_settings.dart';
 import '../services/monitoring/content_trigger_service.dart';
@@ -29,38 +31,61 @@ class DetectionController extends GetxController {
     _startMonitoring();
   }
 
-  /// Load parent settings dari storage/database
+  /// Load parent settings from storage
   Future<void> _loadParentSettings() async {
     try {
-      // TODO: Load dari SharedPreferences atau Supabase
-      // Untuk sekarang, gunakan default settings
-      parentSettings.value = ParentSettings(
-        userId: 'current_user_id',
-        isParentModeEnabled: true,
-        pin: '1234', // Default PIN
-        blockPopupEnabled: true,
-        highRiskAutoBlock: true,
-        mediumRiskNotify: true,
-        lowRiskWarning: true,
-      );
+      final prefs = await SharedPreferences.getInstance();
+      final settingsJson = prefs.getString('parent_settings');
 
-      debugPrint('✅ Parent settings loaded');
+      if (settingsJson != null) {
+        parentSettings.value = ParentSettings.fromJson(
+          jsonDecode(settingsJson),
+        );
+        debugPrint('✅ Parent settings loaded from storage');
+      } else {
+        // Default settings if not found
+        parentSettings.value = ParentSettings(
+          userId: 'current_user_id',
+          isParentModeEnabled: true,
+          pin: '1234', // Default PIN
+          blockPopupEnabled: true,
+          highRiskAutoBlock: true,
+          mediumRiskNotify: true,
+          lowRiskWarning: true,
+        );
+        // Save default settings
+        await updateParentSettings(parentSettings.value!);
+        debugPrint('ℹ️ Default parent settings initialized');
+      }
     } catch (e) {
       debugPrint('❌ Error loading parent settings: $e');
+      // Fallback
+      parentSettings.value = ParentSettings(userId: 'error_fallback');
     }
   }
 
-  /// Load detection history
+  /// Load detection history from storage
   Future<void> _loadDetectionHistory() async {
     try {
-      // TODO: Load dari database
-      // Untuk sekarang gunakan empty list
-      detectionHistory.clear();
-      _updateStatistics();
+      final prefs = await SharedPreferences.getInstance();
+      final historyJson = prefs.getStringList('detection_history');
 
-      debugPrint(
-        '✅ Detection history loaded: ${detectionHistory.length} items',
-      );
+      detectionHistory.clear();
+      if (historyJson != null) {
+        final List<RiskDetection> loadedHistory = historyJson
+            .map((item) => RiskDetection.fromJson(jsonDecode(item)))
+            .toList();
+
+        // Sort by newest first just in case
+        loadedHistory.sort((a, b) => b.detectedAt.compareTo(a.detectedAt));
+
+        detectionHistory.assignAll(loadedHistory);
+        debugPrint(
+          '✅ Detection history loaded: ${detectionHistory.length} items',
+        );
+      }
+
+      _updateStatistics();
     } catch (e) {
       debugPrint('❌ Error loading detection history: $e');
     }
@@ -276,7 +301,20 @@ class DetectionController extends GetxController {
   /// Save detection to database
   Future<void> _saveDetection(RiskDetection detection) async {
     try {
-      // TODO: Save to Supabase
+      final prefs = await SharedPreferences.getInstance();
+
+      // Get existing list to ensure sync
+      List<String> list = prefs.getStringList('detection_history') ?? [];
+
+      // Add new detection (at start)
+      list.insert(0, jsonEncode(detection.toJson()));
+
+      // Limit to 100 items
+      if (list.length > 100) {
+        list = list.sublist(0, 100);
+      }
+
+      await prefs.setStringList('detection_history', list);
       debugPrint('💾 Detection saved: ${detection.id}');
     } catch (e) {
       debugPrint('❌ Error saving detection: $e');
@@ -286,8 +324,26 @@ class DetectionController extends GetxController {
   /// Log PIN override to database
   Future<void> _logPinOverride(RiskDetection detection, String pin) async {
     try {
-      // TODO: Log to database for parent review
-      debugPrint('📝 PIN override logged: ${detection.id}');
+      // Also update the detection in storage to show it is unblocked
+      final prefs = await SharedPreferences.getInstance();
+      List<String> list = prefs.getStringList('detection_history') ?? [];
+
+      // Find and replace
+      for (int i = 0; i < list.length; i++) {
+        try {
+          final map = jsonDecode(list[i]);
+          if (map['id'] == detection.id) {
+            map['is_blocked'] = false; // Unblock
+            list[i] = jsonEncode(map);
+            break;
+          }
+        } catch (e) {
+          // ignore bad json
+        }
+      }
+      await prefs.setStringList('detection_history', list);
+
+      debugPrint('📝 PIN override logged and saved: ${detection.id}');
     } catch (e) {
       debugPrint('❌ Error logging PIN override: $e');
     }
@@ -321,8 +377,11 @@ class DetectionController extends GetxController {
     try {
       parentSettings.value = settings;
 
-      // TODO: Save to database
-      debugPrint('✅ Parent settings updated');
+      // Save to database/storage
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('parent_settings', jsonEncode(settings.toJson()));
+
+      debugPrint('✅ Parent settings updated and saved');
 
       Get.snackbar(
         'Berhasil',
@@ -361,8 +420,10 @@ class DetectionController extends GetxController {
       detectionHistory.clear();
       _updateStatistics();
 
-      // TODO: Clear from database
-      debugPrint('🗑️ Detection history cleared');
+      // Clear from database
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('detection_history');
+      debugPrint('🗑️ Detection history cleared from storage');
 
       Get.snackbar(
         'Berhasil',

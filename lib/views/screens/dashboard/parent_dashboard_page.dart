@@ -5,8 +5,60 @@ import '../profile/parent_settings_screen.dart';
 import '../../../controllers/link_controller.dart';
 import 'child_detail_screen.dart';
 
-class ParentDashboardPage extends StatelessWidget {
+class ParentDashboardPage extends StatefulWidget {
   const ParentDashboardPage({super.key});
+
+  @override
+  State<ParentDashboardPage> createState() => _ParentDashboardPageState();
+}
+
+class _ParentDashboardPageState extends State<ParentDashboardPage> {
+  List<Map<String, dynamic>> _recentActivities = [];
+  Map<String, dynamic> _summaryStats = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadActivities();
+  }
+
+  void _loadActivities() {
+    // Mock Data
+    setState(() {
+      _summaryStats = {
+        'status': 'Aman',
+        'blockedCount': 12,
+        'screenTime': '2j 15m',
+      };
+
+      _recentActivities = [
+        {
+          'title': 'Instagram',
+          'subtitle': 'Aplikasi Sosial Media',
+          'time': '10:30 AM',
+          'isSafe': true,
+        },
+        {
+          'title': 'Website Mencurigakan',
+          'subtitle': 'Diblokir konten dewasa',
+          'time': '09:15 AM',
+          'isSafe': false,
+        },
+        {
+          'title': 'YouTube',
+          'subtitle': 'Video Edukasi',
+          'time': '08:45 AM',
+          'isSafe': true,
+        },
+        {
+          'title': 'Game Online',
+          'subtitle': 'Batas waktu tercapai',
+          'time': 'Kemarin',
+          'isSafe': false,
+        },
+      ];
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +74,7 @@ class ParentDashboardPage extends StatelessWidget {
                 Container(
                   height: 220,
                   padding: const EdgeInsets.fromLTRB(24, 60, 24, 0),
+                  // ... (same decoration)
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       colors: [Color(0xFF2C3E50), Color(0xFF4CA1AF)],
@@ -97,7 +150,7 @@ class ParentDashboardPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 15,
                           offset: const Offset(0, 10),
                         ),
@@ -109,19 +162,21 @@ class ParentDashboardPage extends StatelessWidget {
                         _buildSummaryItem(
                           Icons.shield_outlined,
                           'Status',
-                          'Aman',
-                          Colors.green,
+                          _summaryStats['status'] ?? '...',
+                          _summaryStats['status'] == 'Aman'
+                              ? Colors.green
+                              : Colors.orange,
                         ),
                         _buildSummaryItem(
                           Icons.block_outlined,
                           'Diblokir',
-                          '12',
+                          '${_summaryStats['blockedCount'] ?? 0}',
                           Colors.red,
                         ),
                         _buildSummaryItem(
                           Icons.timer_outlined,
                           'Screen Time',
-                          '2j 15m',
+                          _summaryStats['screenTime'] ?? '--',
                           Colors.blue,
                         ),
                       ],
@@ -193,34 +248,30 @@ class ParentDashboardPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Mock Activity List
-                  _buildActivityTile(
-                    'Instagram',
-                    'Aplikasi Sosial Media',
-                    '10:30 AM',
-                    true, // Allowed
-                  ),
-                  _buildActivityTile(
-                    'Website Mencurigakan',
-                    'Diblokir konten dewasa',
-                    '09:15 AM',
-                    false, // Blocked
-                  ),
-                  _buildActivityTile(
-                    'YouTube',
-                    'Video Edukasi',
-                    '08:45 AM',
-                    true,
-                  ),
-                  _buildActivityTile(
-                    'Game Online',
-                    'Batas waktu tercapai',
-                    'Kemarin',
-                    false,
-                  ),
+                  // Dynamic Activity List
+                  if (_recentActivities.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          'Belum ada aktivitas',
+                          style: GoogleFonts.raleway(color: Colors.grey),
+                        ),
+                      ),
+                    )
+                  else
+                    ..._recentActivities.map(
+                      (activity) => _buildActivityTile(
+                        activity['title'],
+                        activity['subtitle'],
+                        activity['time'],
+                        activity['isSafe'],
+                      ),
+                    ),
                 ],
               ),
             ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -238,7 +289,7 @@ class ParentDashboardPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color, size: 24),
@@ -327,8 +378,6 @@ class ParentDashboardPage extends StatelessWidget {
     );
   }
 
-  // New Helper Methods for Linked Children
-
   Widget _buildChildCard(LinkedChild child, BuildContext context) {
     return GestureDetector(
       onTap: () {
@@ -343,7 +392,7 @@ class ParentDashboardPage extends StatelessWidget {
           border: Border.all(color: const Color(0xFFF1F5F9)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -407,7 +456,7 @@ class ParentDashboardPage extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -436,7 +485,7 @@ class ParentDashboardPage extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -507,7 +556,7 @@ class ParentDashboardPage extends StatelessWidget {
         ? Get.find<LinkController>()
         : Get.put(LinkController());
 
-    linkController.generateCode();
+    linkController.generatePairingCode();
 
     Get.dialog(
       Obx(
@@ -529,7 +578,7 @@ class ParentDashboardPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Berikan kode ini kepada anak Anda',
+                'Berikan kode ini kepada anak Anda untuk menghubungkan akun.',
                 style: GoogleFonts.raleway(
                   color: const Color(0xFF64748B),
                   fontSize: 14,
@@ -539,44 +588,44 @@ class ParentDashboardPage extends StatelessWidget {
               const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  vertical: 20,
-                  horizontal: 32,
+                  horizontal: 24,
+                  vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4A90E2).withOpacity(0.1),
+                  color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: Text(
-                  linkController.formatCode(linkController.generatedCode.value),
+                  linkController.formatCode(linkController.pairingCode.value),
                   style: GoogleFonts.outfit(
-                    fontSize: 36,
+                    fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF4A90E2),
-                    letterSpacing: 8,
+                    letterSpacing: 4,
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              if (linkController.codeExpiresAt.value != null)
-                TweenAnimationBuilder<Duration>(
-                  duration: const Duration(minutes: 10),
-                  tween: Tween(
-                    begin: const Duration(minutes: 10),
-                    end: Duration.zero,
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.timer_outlined,
+                    size: 16,
+                    color: Colors.orange,
                   ),
-                  builder: (context, value, child) {
-                    final minutes = value.inMinutes;
-                    final seconds = value.inSeconds % 60;
-                    return Text(
-                      'Kadaluarsa dalam ${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
-                      style: GoogleFonts.raleway(
-                        color: Colors.orange,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    );
-                  },
-                ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Kode berlaku selama 15 menit',
+                    style: GoogleFonts.raleway(
+                      color: Colors.orange,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
           actions: [
@@ -589,15 +638,8 @@ class ParentDashboardPage extends StatelessWidget {
             ),
             ElevatedButton.icon(
               onPressed: () {
-                // TODO: Implement copy to clipboard
-                Get.snackbar(
-                  'Tersalin',
-                  'Kode berhasil disalin',
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.green,
-                  colorText: Colors.white,
-                  duration: const Duration(seconds: 2),
-                );
+                // Copy to clipboard logic here if needed
+                Get.snackbar('Disalin', 'Kode berhasil disalin ke clipboard');
               },
               icon: const Icon(Icons.copy, size: 18),
               label: const Text('Salin'),

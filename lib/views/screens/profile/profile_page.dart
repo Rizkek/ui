@@ -844,7 +844,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
             const SizedBox(height: 16),
-            if (linkController.isLinkedToParent.value)
+            if (linkController.isParentModeActive.value)
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -853,18 +853,27 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.check_circle_rounded,
-                      color: Color(0xFF166534),
-                    ),
+                    const Icon(Icons.shield_rounded, color: Color(0xFF166534)),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        'Terhubung dengan ${linkController.parentName.value}',
-                        style: GoogleFonts.outfit(
-                          color: const Color(0xFF166534),
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Proteksi Aktif',
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xFF166534),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Perangkat terhubung dengan orang tua',
+                            style: GoogleFonts.raleway(
+                              color: const Color(0xFF166534),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -875,36 +884,32 @@ class _ProfilePageState extends State<ProfilePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Masukkan kode 6-digit dari orang tua:',
+                    'Masukkan kode 6 digit dari HP orang tua:',
                     style: GoogleFonts.raleway(
                       color: const Color(0xFF64748B),
                       fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Cth: 123-456',
-                      hintStyle: GoogleFonts.raleway(
-                        color: const Color(0xFF94A3B8),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () =>
+                          _showInputCodeDialog(context, linkController),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3B82F6),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
                       ),
-                      filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
+                      child: Text(
+                        'Masukkan Kode',
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
                       ),
                     ),
-                    onChanged: (value) async {
-                      if (value.replaceAll('-', '').length == 6) {
-                        final code = value.replaceAll('-', '');
-                        await linkController.verifyCode(code);
-                      }
-                    },
                   ),
                 ],
               ),
@@ -1057,6 +1062,124 @@ class _ProfilePageState extends State<ProfilePage> {
           style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ),
+    );
+  }
+
+  void _showInputCodeDialog(
+    BuildContext context,
+    LinkController linkController,
+  ) {
+    final codeController = TextEditingController();
+    bool isSubmitting = false;
+
+    Get.dialog(
+      StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                const Icon(Icons.link_rounded, color: Color(0xFF4A90E2)),
+                const SizedBox(width: 12),
+                Text(
+                  'Masukkan Kode',
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Masukkan 6 digit kode yang tampil di HP orang tua.',
+                  style: GoogleFonts.raleway(
+                    color: const Color(0xFF64748B),
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: codeController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4,
+                  ),
+                  decoration: InputDecoration(
+                    counterText: "",
+                    hintText: "000000",
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(),
+                child: Text(
+                  'Batal',
+                  style: GoogleFonts.raleway(fontWeight: FontWeight.w600),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        final code = codeController.text;
+                        if (code.length != 6) return;
+
+                        setState(() => isSubmitting = true);
+                        final success = await linkController.joinParent(code);
+                        setState(() => isSubmitting = false);
+
+                        if (success) {
+                          Get.back();
+                          Get.snackbar(
+                            'Berhasil',
+                            'Berhasil terhubung dengan orang tua!',
+                            backgroundColor: Colors.green,
+                            colorText: Colors.white,
+                          );
+                        } else {
+                          Get.snackbar(
+                            'Gagal',
+                            'Kode tidak valid',
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4A90E2),
+                  foregroundColor: Colors.white,
+                ),
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Hubungkan'),
+              ),
+            ],
+          );
+        },
+      ),
+      barrierDismissible: false,
     );
   }
 }
