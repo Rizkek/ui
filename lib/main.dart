@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-// TODO: Firebase - Comment out until Paradise Firebase is configured
-// import 'package:firebase_core/firebase_core.dart';
-// import 'firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'views/splash_screen.dart';
 import 'views/onboarding_screen.dart';
 import 'views/screens/auth/login_screen.dart';
@@ -26,10 +25,8 @@ import 'views/screens/onboarding/permission_request_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // TODO: Initialize Firebase Paradise - Sementara di-comment untuk demo UI/UX
-  // await Firebase.initializeApp(
-  //   options: DefaultFirebaseOptions.currentPlatform,
-  // );
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // TODO: Initialize notification service - Requires Firebase
   // await NotificationService().initialize();

@@ -20,7 +20,10 @@ class SecureStorageService {
       if (user.refreshToken != null) {
         await _storage.write(key: _keyRefreshToken, value: user.refreshToken!);
       }
-      await _storage.write(key: _keyLoginTime, value: user.loginTime.toIso8601String());
+      await _storage.write(
+        key: _keyLoginTime,
+        value: user.loginTime.toIso8601String(),
+      );
     } catch (e) {
       throw Exception('Failed to save user data: $e');
     }
@@ -55,7 +58,10 @@ class SecureStorageService {
   static Future<void> updateToken(String newToken) async {
     try {
       await _storage.write(key: _keyToken, value: newToken);
-      await _storage.write(key: _keyLoginTime, value: DateTime.now().toIso8601String());
+      await _storage.write(
+        key: _keyLoginTime,
+        value: DateTime.now().toIso8601String(),
+      );
     } catch (e) {
       throw Exception('Failed to update token: $e');
     }
@@ -99,7 +105,7 @@ class SecureStorageService {
 
       final loginTime = DateTime.parse(loginTimeStr);
       final now = DateTime.now();
-      
+
       // Firebase tokens expire after 1 hour
       final difference = now.difference(loginTime).inHours;
       return difference >= 1;
@@ -136,12 +142,40 @@ class SecureStorageService {
     }
   }
 
-  // Save daily breakdown data for 7 days statistics
-  static Future<void> saveDailyBreakdown(List<Map<String, dynamic>> dailyBreakdown) async {
+  // Read generic data by key (untuk custom storage needs)
+  static Future<String?> readData(String key) async {
     try {
-      await _storage.write(key: 'daily_breakdown_7days', value: jsonEncode(dailyBreakdown));
+      return await _storage.read(key: key);
+    } catch (e) {
+      print('Error reading data for key $key: $e');
+      return null;
+    }
+  }
+
+  // Write generic data by key (untuk custom storage needs)
+  static Future<void> writeData(String key, String value) async {
+    try {
+      await _storage.write(key: key, value: value);
+    } catch (e) {
+      print('Error writing data for key $key: $e');
+      throw Exception('Failed to write data: $e');
+    }
+  }
+
+  // Save daily breakdown data for 7 days statistics
+  static Future<void> saveDailyBreakdown(
+    List<Map<String, dynamic>> dailyBreakdown,
+  ) async {
+    try {
+      await _storage.write(
+        key: 'daily_breakdown_7days',
+        value: jsonEncode(dailyBreakdown),
+      );
       // Save timestamp to track when data was saved
-      await _storage.write(key: 'daily_breakdown_timestamp', value: DateTime.now().toIso8601String());
+      await _storage.write(
+        key: 'daily_breakdown_timestamp',
+        value: DateTime.now().toIso8601String(),
+      );
     } catch (e) {
       throw Exception('Failed to save daily breakdown: $e');
     }

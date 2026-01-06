@@ -6,6 +6,7 @@ import '../../../services/storage/secure_storage_service.dart';
 import '../../../controllers/link_controller.dart';
 import '../../../services/monitoring/auto_screenshot_service.dart';
 import '../../widgets/cbt_intervention_popup.dart';
+import '../../widgets/child_pin_verification_dialog.dart';
 import '../auth/login_screen.dart';
 import 'dart:async';
 
@@ -266,14 +267,71 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // Toggle Monitoring dari Orang Tua
   Future<void> _toggleParentalMonitoring(bool value) async {
-    setState(() {
-      _parentalMonitoringEnabled = value;
-    });
+    // Jika mau menonaktifkan monitoring, minta PIN dulu
+    if (!value && _parentalMonitoringEnabled) {
+      // Show PIN verification dialog
+      final result = await ChildPinVerificationDialog.show(
+        context: context,
+        onPinSubmit: (pin) async {
+          // Verify PIN
+          final storedPin = await SecureStorageService.readData('parent_pin');
 
-    if (value) {
+          if (storedPin == null) {
+            // Jika belum ada PIN yang diset, beri peringatan
+            Navigator.of(context).pop(false);
+            Get.snackbar(
+              '⚠️ PIN Belum Diset',
+              'Orang tua belum mengatur PIN. Silakan hubungi orang tua.',
+              backgroundColor: Colors.orange,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 3),
+            );
+            return;
+          }
+
+          if (pin == storedPin) {
+            // PIN benar, tutup dialog dan lanjutkan stop monitoring
+            Navigator.of(context).pop(true);
+
+            setState(() {
+              _parentalMonitoringEnabled = false;
+            });
+
+            await _stopParentalMonitoring();
+
+            Get.snackbar(
+              '✅ Verifikasi Berhasil',
+              'Monitoring telah dinonaktifkan',
+              backgroundColor: Colors.green,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 2),
+            );
+          } else {
+            // PIN salah
+            Navigator.of(context).pop(false);
+            Get.snackbar(
+              '❌ PIN Salah',
+              'PIN yang Anda masukkan tidak sesuai',
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 2),
+            );
+          }
+        },
+      );
+
+      // Jika user cancel atau PIN salah, kembalikan toggle ke posisi ON
+      if (result != true) {
+        setState(() {
+          _parentalMonitoringEnabled = true;
+        });
+      }
+    } else if (value && !_parentalMonitoringEnabled) {
+      // Mengaktifkan monitoring (tidak perlu PIN)
+      setState(() {
+        _parentalMonitoringEnabled = true;
+      });
       await _startParentalMonitoring();
-    } else {
-      await _stopParentalMonitoring();
     }
   }
 

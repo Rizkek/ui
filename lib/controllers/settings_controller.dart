@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import '../services/storage/secure_storage_service.dart';
 
 class SettingsController extends GetxController {
   // Observables
@@ -9,7 +8,6 @@ class SettingsController extends GetxController {
 
   // Sensitivity: 1 (Low), 2 (Medium), 3 (High)
   final RxInt sensitivityLevel = 1.obs;
-
 
   void toggleProtection(bool value) {
     isProtectionEnabled.value = value;

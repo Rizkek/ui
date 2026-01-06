@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../services/monitoring/auto_screenshot_service.dart';
 import '../../../services/monitoring/app_detection_service.dart';
+import '../../../controllers/monitoring_approval_controller.dart';
+import '../../widgets/waiting_for_parent_approval_dialog.dart';
 
 class MonitoringScreen extends StatefulWidget {
   const MonitoringScreen({super.key});
@@ -15,6 +18,7 @@ class MonitoringScreen extends StatefulWidget {
 class _MonitoringScreenState extends State<MonitoringScreen> {
   late AutoScreenshotService _screenshotService;
   final AppDetectionService _appDetectionService = AppDetectionService();
+  late MonitoringApprovalController _approvalController;
 
   @override
   void initState() {
@@ -23,6 +27,13 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
       Get.put(AutoScreenshotService());
     }
     _screenshotService = Get.find<AutoScreenshotService>();
+
+    // Initialize approval controller
+    if (!Get.isRegistered<MonitoringApprovalController>()) {
+      Get.put(MonitoringApprovalController());
+    }
+    _approvalController = Get.find<MonitoringApprovalController>();
+
     _checkPermissions();
   }
 
@@ -390,16 +401,26 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
     return Obx(() {
       final isRecording = _screenshotService.isRecording.value;
       return GestureDetector(
-        onTap: () {
+        onTap: () async {
           if (isRecording) {
-            _screenshotService.stopAutoScreenshot();
-            Get.snackbar(
-              'ℹ️ Monitoring Dihentikan',
-              'Monitoring telah dinonaktifkan',
-              backgroundColor: Colors.blue,
-              colorText: Colors.white,
-              duration: const Duration(seconds: 2),
-            );
+            // Cek apakah parental mode enabled
+            final parentalModeEnabled = await _approvalController
+                .isParentalModeEnabled();
+
+            if (parentalModeEnabled) {
+              // Jika parental mode aktif, butuh approval dari orang tua
+              await _handleStopWithApproval();
+            } else {
+              // Jika tidak ada parental mode, langsung stop
+              _screenshotService.stopAutoScreenshot();
+              Get.snackbar(
+                'ℹ️ Monitoring Dihentikan',
+                'Monitoring telah dinonaktifkan',
+                backgroundColor: Colors.blue,
+                colorText: Colors.white,
+                duration: const Duration(seconds: 2),
+              );
+            }
           } else {
             // Langsung set recording tanpa permission request
             // Permission sudah diminta di toggle "Monitoring dari Orang Tua"
@@ -457,6 +478,92 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
           ),
         ),
       );
+    });
+  }
+
+  /// Handle stop monitoring dengan approval flow (2FA PIN System)
+  Future<void> _handleStopWithApproval() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      Get.snackbar(
+        '❌ Error',
+        'User tidak terautentikasi',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    // TODO: Get parent user ID dari Firestore (linked account)
+    // Untuk sekarang, kita gunakan user ID yang sama (demo purposes)
+    final parentUserId = user.uid;
+    final childUserId = user.uid;
+    final childName = user.displayName ?? 'Anak';
+
+    // Create request
+    final requestId = await _approvalController.createStopMonitoringRequest(
+      childUserId: childUserId,
+      childName: childName,
+      parentUserId: parentUserId,
+    );
+
+    if (requestId == null) {
+      Get.snackbar(
+        '❌ Error',
+        'Gagal membuat permintaan approval',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    // Show waiting dialog
+    if (!mounted) return;
+
+    await WaitingForParentApprovalDialog.show(
+      context: context,
+      childName: childName,
+      onCancel: () {
+        _approvalController.cancelRequest(requestId);
+        Get.back();
+      },
+    );
+
+    // Listen ke status changes
+    _approvalController.currentRequest.listen((request) {
+      if (request != null && !request.isPending) {
+        // Close dialog
+        if (Get.isDialogOpen ?? false) {
+          Get.back();
+        }
+
+        // Handle status
+        if (request.status == 'approved') {
+          _screenshotService.stopAutoScreenshot();
+          Get.snackbar(
+            '✅ Disetujui',
+            'Monitoring telah dihentikan oleh orang tua',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
+        } else if (request.status == 'rejected') {
+          Get.snackbar(
+            '❌ Ditolak',
+            'Permintaan stop monitoring ditolak oleh orang tua',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        } else if (request.status == 'timeout') {
+          Get.snackbar(
+            '⏱️ Timeout',
+            'Permintaan melebihi batas waktu (5 menit)',
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+          );
+        }
+
+        _approvalController.clearCurrentRequest();
+      }
     });
   }
 
