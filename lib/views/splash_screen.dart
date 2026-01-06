@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'onboarding_screen.dart';
+import '../../services/storage/secure_storage_service.dart';
+import '../../views/main_navigation.dart';
 import 'widgets/modern_loading.dart'; // Import custom loading
 
 class SplashScreen extends StatefulWidget {
@@ -52,18 +54,31 @@ class _SplashScreenState extends State<SplashScreen>
     // Start animation
     _animationController.forward();
 
-    // Navigate to next screen after delay
-    _navigateToNext();
+    // Check login status and navigate
+    _checkLoginStatus();
   }
 
-  void _navigateToNext() {
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
+  Future<void> _checkLoginStatus() async {
+    // Ensure minimum splash duration of 2.5 seconds
+    await Future.delayed(const Duration(milliseconds: 2500));
+
+    if (!mounted) return;
+
+    try {
+      final isLoggedIn = await SecureStorageService.isLoggedIn();
+
+      if (isLoggedIn && mounted) {
+        final user = await SecureStorageService.getUserData();
+        final role = user?.role ?? 'child';
+
+        debugPrint('✅ User logged in as $role, navigating to Home');
+
+        // Navigate to Home with initial role
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-                const OnboardingScreen(),
+                HomeScreen(initialRole: role),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
                   return FadeTransition(opacity: animation, child: child);
@@ -71,8 +86,28 @@ class _SplashScreenState extends State<SplashScreen>
             transitionDuration: const Duration(milliseconds: 800),
           ),
         );
+      } else {
+        _navigateToOnboarding();
       }
-    });
+    } catch (e) {
+      debugPrint('❌ Error checking login status: $e');
+      _navigateToOnboarding();
+    }
+  }
+
+  void _navigateToOnboarding() {
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const OnboardingScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 800),
+      ),
+    );
   }
 
   @override

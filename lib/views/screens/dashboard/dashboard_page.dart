@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
+import '../../../controllers/link_controller.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/stat_card.dart';
 import '../../widgets/weekly_bar_chart.dart';
@@ -21,6 +23,7 @@ class DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _appBreakdown;
   String _displayName = 'Pengguna';
   List<Map<String, dynamic>> _daily = const [];
+  List<Map<String, dynamic>> _recentActivities = [];
   bool _isLoadingStats = true;
   bool _isLoadingWeekly = true;
 
@@ -54,25 +57,61 @@ class DashboardPageState extends State<DashboardPage> {
           'Instagram': {'Total': 40},
           'WhatsApp': {'Total': 20},
           'Chrome': {'Total': 15},
-        }
+        },
       };
-      
-      _appBreakdown = (_stats?['appBreakdown'] as Map?)?.cast<String, dynamic>();
+
+      _appBreakdown = (_stats?['appBreakdown'] as Map?)
+          ?.cast<String, dynamic>();
+
+      // Dummy Data for Recent Activity
+      _recentActivities = [
+        {
+          'time': '15:30',
+          'app': 'YouTube',
+          'action': 'Aplikasi di Blokir',
+          'risk': 'Medium',
+          'color': const Color(0xFFF59E0B),
+          'bg': const Color(0xFFFEF3C7),
+        },
+        {
+          'time': '12:15',
+          'app': 'Chrome',
+          'action': 'Percobaan Akses',
+          'risk': 'High',
+          'color': const Color(0xFFEF4444),
+          'bg': const Color(0xFFFEE2E2),
+        },
+        {
+          'time': '10:00',
+          'app': 'Instagram',
+          'action': 'Monitoring Aktif',
+          'risk': 'Low',
+          'color': const Color(0xFF10B981),
+          'bg': const Color(0xFFD1FAE5),
+        },
+      ];
+
       _isLoadingStats = false;
-      
+
       // Dummy Data for Weekly Breakdown
       _daily = [
         {'date': '2025-01-01', 'total': 45, 'high': 5, 'medium': 10, 'low': 30},
         {'date': '2024-12-31', 'total': 38, 'high': 2, 'medium': 8, 'low': 28},
         {'date': '2024-12-30', 'total': 50, 'high': 8, 'medium': 12, 'low': 30},
         {'date': '2024-12-29', 'total': 25, 'high': 1, 'medium': 4, 'low': 20},
-        {'date': '2024-12-28', 'total': 60, 'high': 10, 'medium': 15, 'low': 35},
+        {
+          'date': '2024-12-28',
+          'total': 60,
+          'high': 10,
+          'medium': 15,
+          'low': 35,
+        },
         {'date': '2024-12-27', 'total': 30, 'high': 3, 'medium': 7, 'low': 20},
         {'date': '2024-12-26', 'total': 40, 'high': 4, 'medium': 11, 'low': 25},
       ];
       _isLoadingWeekly = false;
     });
-    
+
     print('Dashboard loaded with DUMMY DATA');
   }
 
@@ -83,11 +122,15 @@ class DashboardPageState extends State<DashboardPage> {
 
   Future<void> _loadDisplayName() async {
     // Dummy display name
-    setState(() => _displayName = 'Zikri (Dummy)');
+    setState(() => _displayName = 'Zikri (Anak)');
   }
 
   @override
   Widget build(BuildContext context) {
+    final linkController = Get.isRegistered<LinkController>()
+        ? Get.find<LinkController>()
+        : Get.put(LinkController());
+
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -105,7 +148,9 @@ class DashboardPageState extends State<DashboardPage> {
         children: [
           Container(
             width: double.infinity,
-            height: headerHeight.clamp(80.0, 120.0) + MediaQuery.of(context).padding.top,
+            height:
+                headerHeight.clamp(80.0, 120.0) +
+                MediaQuery.of(context).padding.top,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -149,7 +194,7 @@ class DashboardPageState extends State<DashboardPage> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Hari ini: ${(_stats?['totalGrandTotal'] ?? '-') } deteksi',
+                            'Hari ini: ${(_stats?['totalGrandTotal'] ?? '-')} deteksi',
                             style: GoogleFonts.inter(
                               color: const Color(0xFFE5E7EB),
                               fontSize: isExtraSmall ? 11 : 12,
@@ -177,7 +222,7 @@ class DashboardPageState extends State<DashboardPage> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -200,185 +245,380 @@ class DashboardPageState extends State<DashboardPage> {
               onRefresh: refreshStats,
               color: const Color(0xFF3B82F6),
               child: SingleChildScrollView(
-              padding: EdgeInsets.only(
-                left: screenWidth * 0.05,
-                right: screenWidth * 0.05,
-                top: isSmallScreen ? 10 : 15,
-                bottom: screenHeight * 0.15,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Statistik Hari ini',
-                    style: GoogleFonts.inter(
-                      color: Colors.black,
-                      fontSize: isSmallScreen ? 18 : 20,
-                      fontWeight: FontWeight.w600,
+                padding: EdgeInsets.only(
+                  left: screenWidth * 0.05,
+                  right: screenWidth * 0.05,
+                  top: isSmallScreen ? 10 : 15,
+                  bottom: screenHeight * 0.15,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // PAIRING STATUS CARD (Corrected for Child Input)
+                    Obx(() {
+                      final isActive = linkController.isParentModeActive.value;
+                      if (!isActive) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 24),
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF6366F1,
+                                ).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.link_rounded,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Hubungkan Orang Tua',
+                                          style: GoogleFonts.outfit(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Masukkan kode dari HP orang tua',
+                                          style: GoogleFonts.raleway(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.9,
+                                            ),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () => _showInputCodeDialog(
+                                    context,
+                                    linkController,
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: const Color(0xFF6366F1),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Masukkan Kode',
+                                    style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 24),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECFDF5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(
+                                0xFF10B981,
+                              ).withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.shield_rounded,
+                                color: Color(0xFF10B981),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Proteksi Aktif',
+                                      style: GoogleFonts.outfit(
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF065F46),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Orang tua terhubung & memantau',
+                                      style: GoogleFonts.raleway(
+                                        fontSize: 12,
+                                        color: const Color(0xFF047857),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    }),
+                    Text(
+                      'Statistik Hari ini',
+                      style: GoogleFonts.inter(
+                        color: Colors.black,
+                        fontSize: isSmallScreen ? 18 : 20,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: isSmallScreen ? 12 : 15),
-                  // Statistics Cards with Skeleton Loading
-                  _isLoadingStats
-                      ? Wrap(
-                          spacing: cardSpacing,
-                          runSpacing: cardSpacing,
-                          children: List.generate(
-                            4,
-                            (index) => SizedBox(
-                              width: (screenWidth - (screenWidth * 0.1) - cardSpacing) / 2,
-                              child: SkeletonStatCard(
-                                height: cardHeight.clamp(90.0, 110.0),
-                                isSmallScreen: isSmallScreen,
+                    SizedBox(height: isSmallScreen ? 12 : 15),
+                    // Statistics Cards with Skeleton Loading
+                    _isLoadingStats
+                        ? Wrap(
+                            spacing: cardSpacing,
+                            runSpacing: cardSpacing,
+                            children: List.generate(
+                              4,
+                              (index) => SizedBox(
+                                width:
+                                    (screenWidth -
+                                        (screenWidth * 0.1) -
+                                        cardSpacing) /
+                                    2,
+                                child: SkeletonStatCard(
+                                  height: cardHeight.clamp(90.0, 110.0),
+                                  isSmallScreen: isSmallScreen,
+                                ),
                               ),
+                            ),
+                          )
+                        : Wrap(
+                            spacing: cardSpacing,
+                            runSpacing: cardSpacing,
+                            children: [
+                              SizedBox(
+                                width:
+                                    (screenWidth -
+                                        (screenWidth * 0.1) -
+                                        cardSpacing) /
+                                    2,
+                                child: StatCard(
+                                  count: (_stats?['totalGrandTotal'] ?? '-')
+                                      .toString(),
+                                  title: 'Total',
+                                  subtitle: 'Semua Level',
+                                  color: const Color(0xFF2E6FED),
+                                  icon: Icons.search,
+                                  height: cardHeight.clamp(90.0, 110.0),
+                                  isSmallScreen: isSmallScreen,
+                                ),
+                              ),
+                              SizedBox(
+                                width:
+                                    (screenWidth -
+                                        (screenWidth * 0.1) -
+                                        cardSpacing) /
+                                    2,
+                                child: StatCard(
+                                  count: (_stats?['totalLow'] ?? '-')
+                                      .toString(),
+                                  title: 'Low Risk',
+                                  subtitle: 'Aman',
+                                  color: const Color.fromARGB(255, 255, 230, 0),
+                                  icon: Icons.shield,
+                                  height: cardHeight.clamp(90.0, 110.0),
+                                  isSmallScreen: isSmallScreen,
+                                ),
+                              ),
+                              SizedBox(
+                                width:
+                                    (screenWidth -
+                                        (screenWidth * 0.1) -
+                                        cardSpacing) /
+                                    2,
+                                child: StatCard(
+                                  count: (_stats?['totalMedium'] ?? '-')
+                                      .toString(),
+                                  title: 'Medium Risk',
+                                  subtitle: 'Hati-hati',
+                                  color: const Color.fromARGB(
+                                    255,
+                                    213,
+                                    107,
+                                    50,
+                                  ),
+                                  icon: Icons.warning,
+                                  height: cardHeight.clamp(90.0, 110.0),
+                                  isSmallScreen: isSmallScreen,
+                                ),
+                              ),
+                              SizedBox(
+                                width:
+                                    (screenWidth -
+                                        (screenWidth * 0.1) -
+                                        cardSpacing) /
+                                    2,
+                                child: StatCard(
+                                  count: (_stats?['totalHigh'] ?? '-')
+                                      .toString(),
+                                  title: 'High Risk',
+                                  subtitle: 'Bahaya',
+                                  color: const Color.fromARGB(255, 244, 0, 0),
+                                  icon: Icons.dangerous,
+                                  height: cardHeight.clamp(90.0, 110.0),
+                                  isSmallScreen: isSmallScreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                    SizedBox(height: isSmallScreen ? 16 : 20),
+                    SectionHeader(
+                      title: 'Tren 7 Hari Terakhir',
+                      isSmallScreen: isSmallScreen,
+                      onDetail: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HistoryDetailScreen(
+                              title: 'Trend 7 Hari Terakhir',
+                              type: 'weekly',
                             ),
                           ),
-                        )
-                      : Wrap(
-                          spacing: cardSpacing,
-                          runSpacing: cardSpacing,
-                          children: [
-                            SizedBox(
-                              width: (screenWidth - (screenWidth * 0.1) - cardSpacing) / 2,
-                              child: StatCard(
-                                count: (_stats?['totalGrandTotal'] ?? '-').toString(),
-                                title: 'Total',
-                                subtitle: 'Semua Level',
-                                color: const Color(0xFF2E6FED),
-                                icon: Icons.search,
-                                height: cardHeight.clamp(90.0, 110.0),
-                                isSmallScreen: isSmallScreen,
-                              ),
-                            ),
-                            SizedBox(
-                              width: (screenWidth - (screenWidth * 0.1) - cardSpacing) / 2,
-                              child: StatCard(
-                                count: (_stats?['totalLow'] ?? '-').toString(),
-                                title: 'Low Risk',
-                                subtitle: 'Aman',
-                                color: const Color.fromARGB(255, 255, 230, 0),
-                                icon: Icons.shield,
-                                height: cardHeight.clamp(90.0, 110.0),
-                                isSmallScreen: isSmallScreen,
-                              ),
-                            ),
-                            SizedBox(
-                              width: (screenWidth - (screenWidth * 0.1) - cardSpacing) / 2,
-                              child: StatCard(
-                                count: (_stats?['totalMedium'] ?? '-').toString(),
-                                title: 'Medium Risk',
-                                subtitle: 'Hati-hati',
-                                color: const Color.fromARGB(255, 213, 107, 50),
-                                icon: Icons.warning,
-                                height: cardHeight.clamp(90.0, 110.0),
-                                isSmallScreen: isSmallScreen,
-                              ),
-                            ),
-                            SizedBox(
-                              width: (screenWidth - (screenWidth * 0.1) - cardSpacing) / 2,
-                              child: StatCard(
-                                count: (_stats?['totalHigh'] ?? '-').toString(),
-                                title: 'High Risk',
-                                subtitle: 'Bahaya',
-                                color: const Color.fromARGB(255, 244, 0, 0),
-                                icon: Icons.dangerous,
-                                height: cardHeight.clamp(90.0, 110.0),
-                                isSmallScreen: isSmallScreen,
-                              ),
-                            ),
-                          ],
-                        ),
-                  SizedBox(height: isSmallScreen ? 16 : 20),
-                  SectionHeader(
-                    title: 'Tren 7 Hari Terakhir',
-                    isSmallScreen: isSmallScreen,
-                    onDetail: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HistoryDetailScreen(
-                            title: 'Trend 7 Hari Terakhir',
-                            type: 'weekly',
+                        );
+                      },
+                    ),
+                    SizedBox(height: isSmallScreen ? 8 : 12),
+                    // Weekly Chart with Skeleton Loading
+                    _isLoadingWeekly
+                        ? SkeletonWeeklyChart(
+                            height: chartHeight.clamp(180.0, 240.0),
+                          )
+                        : WeeklyBarChart(
+                            daily: _daily,
+                            height: chartHeight.clamp(180.0, 240.0),
                           ),
+                    SizedBox(height: isSmallScreen ? 15 : 20),
+                    SectionHeader(
+                      title: 'Aplikasi Terdeteksi',
+                      isSmallScreen: isSmallScreen,
+                      onDetail: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HistoryDetailScreen(
+                              title: 'Aplikasi Terdeteksi',
+                              type: 'apps',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    SizedBox(height: isSmallScreen ? 8 : 12),
+                    // App Cards with Skeleton Loading
+                    ...(_isLoadingStats
+                        ? List.generate(
+                            2,
+                            (index) => Padding(
+                              padding: EdgeInsets.only(
+                                bottom: isSmallScreen ? 6 : 8,
+                              ),
+                              child: SkeletonAppCard(
+                                isSmallScreen: isSmallScreen,
+                              ),
+                            ),
+                          )
+                        : _buildTopApps(isSmallScreen)),
+                    SizedBox(height: isSmallScreen ? 15 : 20),
+                    SectionHeader(
+                      title: 'Activity Terbaru',
+                      isSmallScreen: isSmallScreen,
+                      onDetail: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HistoryDetailScreen(
+                              title: 'Activity Terbaru',
+                              type: 'activity',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    SizedBox(height: isSmallScreen ? 8 : 12),
+                    ..._recentActivities.map((activity) {
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: isSmallScreen ? 6 : 8),
+                        child: ActivityCard(
+                          time: activity['time'],
+                          appName: activity['app'],
+                          action: activity['action'],
+                          riskLevel: activity['risk'],
+                          riskColor: activity['color'],
+                          backgroundColor: activity['bg'],
+                          isSmallScreen: isSmallScreen,
                         ),
                       );
-                    },
-                  ),
-                  SizedBox(height: isSmallScreen ? 8 : 12),
-                  // Weekly Chart with Skeleton Loading
-                  _isLoadingWeekly
-                      ? SkeletonWeeklyChart(height: chartHeight.clamp(180.0, 240.0))
-                      : WeeklyBarChart(
-                          daily: _daily,
-                          height: chartHeight.clamp(180.0, 240.0),
-                        ),
-                  SizedBox(height: isSmallScreen ? 15 : 20),
-                  SectionHeader(
-                    title: 'Aplikasi Terdeteksi',
-                    isSmallScreen: isSmallScreen,
-                    onDetail: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HistoryDetailScreen(
-                            title: 'Aplikasi Terdeteksi',
-                            type: 'apps',
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  SizedBox(height: isSmallScreen ? 8 : 12),
-                  // App Cards with Skeleton Loading
-                  ...(_isLoadingStats
-                      ? List.generate(
-                          2,
-                          (index) => Padding(
-                            padding: EdgeInsets.only(bottom: isSmallScreen ? 6 : 8),
-                            child: SkeletonAppCard(
-                              isSmallScreen: isSmallScreen,
+                    }),
+                    if (_recentActivities.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Center(
+                          child: Text(
+                            'Belum ada aktivitas tercatat',
+                            style: GoogleFonts.raleway(
+                              color: Colors.grey,
+                              fontSize: 14,
                             ),
                           ),
-                        )
-                      : _buildTopApps(isSmallScreen)),
-                  SizedBox(height: isSmallScreen ? 15 : 20),
-                  SectionHeader(
-                    title: 'Activity Terbaru',
-                    isSmallScreen: isSmallScreen,
-                    onDetail: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HistoryDetailScreen(
-                            title: 'Activity Terbaru',
-                            type: 'activity',
-                          ),
                         ),
-                      );
-                    },
-                  ),
-                  SizedBox(height: isSmallScreen ? 8 : 12),
-                  ActivityCard(
-                    time: '15:30',
-                    appName: 'YouTube',
-                    action: 'Aplikasi di Blokir',
-                    riskLevel: 'Medium',
-                    riskColor: const Color(0xFFF59E0B),
-                    backgroundColor: const Color(0xFFFEF3C7),
-                    isSmallScreen: isSmallScreen,
-                  ),
-                  SizedBox(height: isSmallScreen ? 6 : 8),
-                  ActivityCard(
-                    time: '15:30',
-                    appName: 'YouTube',
-                    action: 'User Abaikan',
-                    riskLevel: 'Medium',
-                    riskColor: const Color(0xFFF59E0B),
-                    backgroundColor: const Color(0xFFFEF3C7),
-                    isSmallScreen: isSmallScreen,
-                  ),
-                ],
-              ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -392,8 +632,11 @@ class DashboardPageState extends State<DashboardPage> {
       return [
         Text(
           'Belum ada data aplikasi',
-          style: GoogleFonts.inter(color: const Color(0xFF6B7280), fontSize: 12),
-        )
+          style: GoogleFonts.inter(
+            color: const Color(0xFF6B7280),
+            fontSize: 12,
+          ),
+        ),
       ];
     }
 
@@ -419,12 +662,12 @@ class DashboardPageState extends State<DashboardPage> {
       final icon = name.toLowerCase().contains('you')
           ? Icons.play_arrow
           : name.toLowerCase().contains('insta')
-              ? Icons.camera_alt
-              : name.toLowerCase().contains('face')
-                  ? Icons.facebook
-                  : name.toLowerCase().contains('twit') || name.toLowerCase() == 'x'
-                      ? Icons.close
-                      : Icons.apps;
+          ? Icons.camera_alt
+          : name.toLowerCase().contains('face')
+          ? Icons.facebook
+          : name.toLowerCase().contains('twit') || name.toLowerCase() == 'x'
+          ? Icons.close
+          : Icons.apps;
 
       cards.add(
         AppCard(
@@ -449,5 +692,123 @@ class DashboardPageState extends State<DashboardPage> {
   String _capitalize(String s) {
     if (s.isEmpty) return s;
     return s[0].toUpperCase() + s.substring(1);
+  }
+
+  void _showInputCodeDialog(
+    BuildContext context,
+    LinkController linkController,
+  ) {
+    final codeController = TextEditingController();
+    bool isSubmitting = false;
+
+    Get.dialog(
+      StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                const Icon(Icons.link_rounded, color: Color(0xFF4A90E2)),
+                const SizedBox(width: 12),
+                Text(
+                  'Masukkan Kode',
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Masukkan 6 digit kode yang tampil di HP orang tua.',
+                  style: GoogleFonts.raleway(
+                    color: const Color(0xFF64748B),
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: codeController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4,
+                  ),
+                  decoration: InputDecoration(
+                    counterText: "",
+                    hintText: "000000",
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(),
+                child: Text(
+                  'Batal',
+                  style: GoogleFonts.raleway(fontWeight: FontWeight.w600),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        final code = codeController.text;
+                        if (code.length != 6) return;
+
+                        setState(() => isSubmitting = true);
+                        final success = await linkController.joinParent(code);
+                        setState(() => isSubmitting = false);
+
+                        if (success) {
+                          Get.back();
+                          Get.snackbar(
+                            'Berhasil',
+                            'Berhasil terhubung dengan orang tua!',
+                            backgroundColor: Colors.green,
+                            colorText: Colors.white,
+                          );
+                        } else {
+                          Get.snackbar(
+                            'Gagal',
+                            'Kode tidak valid',
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4A90E2),
+                  foregroundColor: Colors.white,
+                ),
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Hubungkan'),
+              ),
+            ],
+          );
+        },
+      ),
+      barrierDismissible: false,
+    );
   }
 }

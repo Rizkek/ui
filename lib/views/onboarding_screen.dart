@@ -73,7 +73,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: [
                 // Image Section
                 Expanded(
-                  flex: 3,
+                  flex: 1, // Increased prominence (was 3:2, now 1:1)
                   child: PageView.builder(
                     controller: _pageController,
                     physics: const BouncingScrollPhysics(),
@@ -89,9 +89,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
 
-                // Content Section (Sheet-like)
+                // Content Section
                 Expanded(
-                  flex: 2,
+                  flex: 1,
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(32),
@@ -108,105 +108,99 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                       ],
                     ),
-                    child: SingleChildScrollView(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(minHeight: 250),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Column(
-                              children: [
-                                _buildPageIndicators(),
-                                const SizedBox(height: 24),
-                                Text(
-                                  _onboardingData[currentPage]["title"]!,
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.outfit(
-                                    color: const Color(0xFF1E293B),
-                                    fontSize: 24, // Slightly smaller font
-                                    fontWeight: FontWeight.bold,
-                                    height: 1.2,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _onboardingData[currentPage]["desc"]!,
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.raleway(
-                                    color: const Color(0xFF64748B),
-                                    fontSize: 15,
-                                    height: 1.5,
-                                  ),
-                                ),
-                              ],
-                            ),
+                            _buildPageIndicators(),
                             const SizedBox(height: 24),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                // Skip Button
-                                if (currentPage < 2)
-                                  TextButton(
-                                    onPressed: _skipOnboarding,
-                                    child: Text(
-                                      'Lewati',
-                                      style: GoogleFonts.outfit(
-                                        color: const Color(0xFF94A3B8),
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  const SizedBox(
-                                    width: 80,
-                                  ), // Spacer to keep layout balanced
-                                // Next/Start Button
-                                ElevatedButton(
-                                  onPressed: currentPage == 2
-                                      ? _getStarted
-                                      : _nextPage,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF3B82F6),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 32,
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    elevation: 4,
-                                    shadowColor: const Color(
-                                      0xFF3B82F6,
-                                    ).withOpacity(0.4),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        currentPage == 2 ? 'Mulai' : 'Lanjut',
-                                        style: GoogleFonts.outfit(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      if (currentPage != 2)
-                                        const Padding(
-                                          padding: EdgeInsets.only(left: 8),
-                                          child: Icon(
-                                            Icons.arrow_forward_rounded,
-                                            size: 20,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              _onboardingData[currentPage]["title"]!,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.outfit(
+                                color: const Color(0xFF1E293B),
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                height: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _onboardingData[currentPage]["desc"]!,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.raleway(
+                                color: const Color(0xFF64748B),
+                                fontSize: 15,
+                                height: 1.5,
+                              ),
                             ),
                           ],
                         ),
-                      ),
+                        // Buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Skip Button
+                            if (currentPage < 2)
+                              TextButton(
+                                onPressed: _skipOnboarding,
+                                child: Text(
+                                  'Lewati',
+                                  style: GoogleFonts.outfit(
+                                    color: const Color(0xFF94A3B8),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              )
+                            else
+                              const SizedBox(width: 80),
+                            // Next/Start Button
+                            ElevatedButton(
+                              onPressed: currentPage == 2
+                                  ? _getStarted
+                                  : _nextPage,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF3B82F6),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 4,
+                                shadowColor: const Color(
+                                  0xFF3B82F6,
+                                ).withOpacity(0.4),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    currentPage == 2 ? 'Mulai' : 'Lanjut',
+                                    style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  if (currentPage != 2)
+                                    const Padding(
+                                      padding: EdgeInsets.only(left: 8),
+                                      child: Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 20,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),

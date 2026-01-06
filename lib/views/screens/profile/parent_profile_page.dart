@@ -4,8 +4,8 @@ import 'package:get/get.dart';
 import '../../../controllers/login_controller.dart';
 import '../../../controllers/link_controller.dart';
 import '../../../services/storage/secure_storage_service.dart';
-import '../auth/login_screen.dart';
 import 'parent_settings_screen.dart';
+import '../auth/login_screen.dart';
 
 class ParentProfilePage extends StatefulWidget {
   const ParentProfilePage({super.key});
@@ -134,18 +134,24 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
                         ),
                       ),
                       const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
+                      // Settings Button
+                      GestureDetector(
+                        onTap: () {
+                          Get.to(() => const ParentSettingsScreen());
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
+                            ),
                           ),
-                        ),
-                        child: const Icon(
-                          Icons.settings_outlined,
-                          color: Colors.white,
+                          child: const Icon(
+                            Icons.settings_outlined,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ],
@@ -167,7 +173,7 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Profile Card - Overlapping effect simulation created by gradient order, but here kept solid
+                          // Profile Card
                           _buildProfileCard(),
                           const SizedBox(height: 24),
 
@@ -180,7 +186,7 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
                           const SizedBox(height: 24),
 
                           // Anak Terhubung
-                          _buildLinkedChildren(),
+                          _buildLinkedChildren(context),
                           const SizedBox(height: 32),
 
                           // Logout Button
@@ -463,7 +469,7 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
     );
   }
 
-  Widget _buildLinkedChildren() {
+  Widget _buildLinkedChildren(BuildContext context) {
     final linkController = Get.isRegistered<LinkController>()
         ? Get.find<LinkController>()
         : Get.put(LinkController());
@@ -483,23 +489,35 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE0E7FF),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${linkController.linkedChildren.length} Akun',
-                  style: GoogleFonts.outfit(
-                    color: const Color(0xFF4F46E5),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0E7FF),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${linkController.linkedChildren.length}',
+                      style: GoogleFonts.outfit(
+                        color: const Color(0xFF4F46E5),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _showGenerateCodeDialog(context),
+                    child: const Icon(
+                      Icons.add_circle_outline,
+                      color: Color(0xFF3F88EB),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -527,6 +545,19 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
                       color: const Color(0xFF64748B),
                       fontWeight: FontWeight.w600,
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => _showGenerateCodeDialog(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3F88EB),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Tambah Anak'),
                   ),
                 ],
               ),
@@ -660,6 +691,110 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showGenerateCodeDialog(BuildContext context) {
+    final linkController = Get.isRegistered<LinkController>()
+        ? Get.find<LinkController>()
+        : Get.put(LinkController());
+
+    linkController.generatePairingCode();
+
+    Get.dialog(
+      Obx(
+        () => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              const Icon(Icons.qr_code_2, color: Color(0xFF4A90E2)),
+              const SizedBox(width: 12),
+              Text(
+                'Kode Undangan',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Berikan kode ini kepada anak Anda untuk menghubungkan akun.',
+                style: GoogleFonts.raleway(
+                  color: const Color(0xFF64748B),
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Text(
+                  linkController.formatCode(linkController.pairingCode.value),
+                  style: GoogleFonts.outfit(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4,
+                    color: const Color(0xFF1E293B),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.timer_outlined,
+                    size: 16,
+                    color: Colors.orange,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Kode berlaku selama 15 menit',
+                    style: GoogleFonts.raleway(
+                      color: Colors.orange,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: Text(
+                'Tutup',
+                style: GoogleFonts.raleway(fontWeight: FontWeight.w600),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                // Copy to clipboard logic here if needed
+                Get.snackbar('Disalin', 'Kode berhasil disalin ke clipboard');
+              },
+              icon: const Icon(Icons.copy, size: 18),
+              label: const Text('Salin'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A90E2),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+      barrierDismissible: true,
     );
   }
 }

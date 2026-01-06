@@ -3,7 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import '../../../models/login.dart';
 import '../../../controllers/login_controller.dart';
-import '../../widgets/modern_loading.dart'; // Import modern loading
+import '../../widgets/modern_loading.dart';
+import '../onboarding/permission_request_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -102,7 +103,17 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_selectedRole == 'parent') {
       Navigator.pushReplacementNamed(context, '/parent');
     } else {
-      Navigator.pushReplacementNamed(context, '/child');
+      // Child flow: Check permissions first
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PermissionRequestScreen(
+            onComplete: () {
+              Navigator.pushReplacementNamed(context, '/child');
+            },
+          ),
+        ),
+      );
     }
   }
 
