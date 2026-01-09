@@ -86,8 +86,8 @@ class DashboardPageState extends State<DashboardPage> {
           'app': 'Instagram',
           'action': 'Monitoring Aktif',
           'risk': 'Low',
-          'color': const Color(0xFF10B981),
-          'bg': const Color(0xFFD1FAE5),
+          'color': const Color(0xFFEAB308), // Yellow-600
+          'bg': const Color(0xFFFEF9C3), // Yellow-100
         },
       ];
 
@@ -469,7 +469,7 @@ class DashboardPageState extends State<DashboardPage> {
                                       .toString(),
                                   title: 'Low Risk',
                                   subtitle: 'Aman',
-                                  color: const Color.fromARGB(255, 255, 230, 0),
+                                  color: const Color(0xFFEAB308), // Yellow-600
                                   icon: Icons.shield,
                                   height: cardHeight.clamp(90.0, 110.0),
                                   isSmallScreen: isSmallScreen,

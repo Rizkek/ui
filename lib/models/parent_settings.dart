@@ -20,9 +20,9 @@ class ParentSettings {
     this.lastUpdated,
   });
 
-  /// Validasi PIN (4-6 digit)
+  /// Validasi PIN (harus 6 digit)
   static bool isValidPin(String pin) {
-    return pin.length >= 4 && pin.length <= 6 && int.tryParse(pin) != null;
+    return pin.length == 6 && int.tryParse(pin) != null;
   }
 
   /// Verify PIN

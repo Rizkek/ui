@@ -6,6 +6,8 @@ import '../../../controllers/link_controller.dart';
 import '../../../services/storage/secure_storage_service.dart';
 import 'parent_settings_screen.dart';
 import '../auth/login_screen.dart';
+import 'parent_personal_information_screen.dart';
+import 'parent_change_password_screen.dart';
 
 class ParentProfilePage extends StatefulWidget {
   const ParentProfilePage({super.key});
@@ -220,67 +222,53 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
         ],
         border: Border.all(color: const Color(0xFFF1F5F9)),
       ),
-      child: Row(
+      child: Column(
+        // changed Row to Column to accommodate Edit button
         children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF3F88EB), width: 2),
-            ),
-            child: CircleAvatar(
-              radius: 35,
-              backgroundColor: const Color(0xFFEFF6FF),
-              child: const Icon(
-                Icons.person_rounded,
-                size: 35,
-                color: Color(0xFF3F88EB),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF3F88EB), width: 2),
+                ),
+                child: CircleAvatar(
+                  radius: 35,
+                  backgroundColor: const Color(0xFFEFF6FF),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    size: 35,
+                    color: Color(0xFF3F88EB),
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _name,
-                  style: GoogleFonts.outfit(
-                    color: const Color(0xFF1E293B),
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _email,
-                  style: GoogleFonts.raleway(
-                    color: const Color(0xFF64748B),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDCFCE7),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Akun Premium',
-                    style: GoogleFonts.outfit(
-                      color: const Color(0xFF166534),
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _name,
+                      style: GoogleFonts.outfit(
+                        color: const Color(0xFF1E293B),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _email,
+                      style: GoogleFonts.raleway(
+                        color: const Color(0xFF64748B),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -376,26 +364,31 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
         ),
         const SizedBox(height: 16),
         _buildSettingTile(
-          'Kontrol Proteksi',
-          'Atur sensitivitas & blokir',
-          Icons.security_rounded,
+          'Informasi Pribadi',
+          'Data diri & kontak',
+          Icons.person_outline_rounded,
           Colors.blue,
-          onTap: () => Get.to(() => const ParentSettingsScreen()),
+          onTap: () {
+            Get.to(() => const ParentPersonalInformationScreen());
+          },
         ),
         const SizedBox(height: 12),
         _buildSettingTile(
-          'Notifikasi',
-          'Riwayat alert keamanan',
-          Icons.notifications_active_rounded,
-          Colors.orange,
+          'Ganti Password',
+          'Perbarui kata sandi akun',
+          Icons.lock_outline_rounded,
+          Colors.purple,
           onTap: () {
-            Get.snackbar(
-              'Segera Hadir',
-              'Fitur notifikasi lanjutan sedang dikembangkan',
-              backgroundColor: Colors.indigo,
-              colorText: Colors.white,
-            );
+            Get.to(() => const ParentChangePasswordScreen());
           },
+        ),
+        const SizedBox(height: 12),
+        _buildSettingTile(
+          'Kontrol Proteksi',
+          'Atur sensitivitas & blokir',
+          Icons.security_rounded,
+          Colors.green,
+          onTap: () => Get.to(() => const ParentSettingsScreen()),
         ),
       ],
     );
@@ -720,15 +713,40 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Berikan kode ini kepada anak Anda untuk menghubungkan akun.',
-                style: GoogleFonts.raleway(
-                  color: const Color(0xFF64748B),
-                  fontSize: 14,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                textAlign: TextAlign.center,
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: const Color(0xFF4A90E2),
+                      size: 32,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Cara Menghubungkan Akun',
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: const Color(0xFF1E293B),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+              _buildStep('1', 'Buka aplikasi di HP anak'),
+              const SizedBox(height: 8),
+              _buildStep('2', 'Login dengan akun anak'),
+              const SizedBox(height: 8),
+              _buildStep('3', 'Tap tombol "Masukkan Kode"'),
+              const SizedBox(height: 8),
+              _buildStep('4', 'Masukkan kode berikut:'),
+              const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -737,7 +755,7 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: const Color(0xFF4A90E2), width: 2),
                 ),
                 child: Text(
                   linkController.formatCode(linkController.pairingCode.value),
@@ -749,7 +767,7 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -795,6 +813,41 @@ class _ParentProfilePageState extends State<ParentProfilePage> {
         ),
       ),
       barrierDismissible: true,
+    );
+  }
+
+  Widget _buildStep(String number, String text) {
+    return Row(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: const Color(0xFF4A90E2),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: GoogleFonts.raleway(
+              fontSize: 13,
+              color: const Color(0xFF475569),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

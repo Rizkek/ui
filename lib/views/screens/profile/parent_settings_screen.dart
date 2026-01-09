@@ -225,6 +225,7 @@ class ParentSettingsScreen extends StatelessWidget {
     return Obx(() {
       final settings = controller.parentSettings.value;
       final hasPin = settings?.pin != null && settings!.pin!.isNotEmpty;
+      final pin = settings?.pin ?? '';
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -288,6 +289,19 @@ class ParentSettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                // Display PIN with show/hide toggle
+                if (hasPin) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: _PinDisplay(pin: pin),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -662,7 +676,7 @@ class ParentSettingsScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'PIN digunakan untuk menonaktifkan deteksi sementara (4-6 digit)',
+              'PIN digunakan untuk menonaktifkan deteksi sementara (6 digit)',
               style: GoogleFonts.raleway(
                 color: const Color(0xFF64748B),
                 fontSize: 14,
@@ -717,7 +731,7 @@ class ParentSettingsScreen extends StatelessWidget {
               if (!ParentSettings.isValidPin(pin)) {
                 Get.snackbar(
                   'Error',
-                  'PIN harus 4-6 digit angka',
+                  'PIN harus 6 digit angka',
                   snackPosition: SnackPosition.BOTTOM,
                   backgroundColor: Colors.red,
                   colorText: Colors.white,
@@ -817,6 +831,68 @@ class ParentSettingsScreen extends StatelessWidget {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
+    );
+  }
+}
+
+// Widget untuk menampilkan PIN dengan toggle show/hide
+class _PinDisplay extends StatefulWidget {
+  final String pin;
+
+  const _PinDisplay({required this.pin});
+
+  @override
+  State<_PinDisplay> createState() => _PinDisplayState();
+}
+
+class _PinDisplayState extends State<_PinDisplay> {
+  bool _isVisible = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(Icons.vpn_key_rounded, color: const Color(0xFF4A90E2), size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'PIN Anda',
+                style: GoogleFonts.raleway(
+                  fontSize: 12,
+                  color: const Color(0xFF64748B),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _isVisible ? widget.pin : '••••••',
+                style: GoogleFonts.outfit(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1E293B),
+                  letterSpacing: 4,
+                ),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          icon: Icon(
+            _isVisible
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+            color: const Color(0xFF64748B),
+          ),
+          onPressed: () {
+            setState(() {
+              _isVisible = !_isVisible;
+            });
+          },
+        ),
+      ],
     );
   }
 }

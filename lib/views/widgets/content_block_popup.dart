@@ -293,7 +293,7 @@ class ContentBlockPopup extends StatelessWidget {
                 onPsychoeducationTap?.call();
               },
               icon: const Icon(Icons.psychology_outlined),
-              label: const Text('Pelajari Mengapa Ini Berbahaya'),
+              label: const Text('Chat dengan AI Helper & Konseling'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4A90E2),
                 foregroundColor: Colors.white,
@@ -412,12 +412,12 @@ class ContentBlockPopup extends StatelessWidget {
             onPressed: () {
               if (parentSettings?.verifyPin(pinController.text) == true) {
                 Navigator.of(context).pop(); // Close PIN dialog
-                Navigator.of(context).pop(); // Close block popup
+                // Don't close block popup here - let it stay open
                 onPinEntered?.call(pinController.text);
 
                 Get.snackbar(
                   'Berhasil',
-                  'Deteksi dinonaktifkan sementara',
+                  'Deteksi dinonaktifkan sementara. Tap "Kembali" untuk melanjutkan.',
                   snackPosition: SnackPosition.BOTTOM,
                   backgroundColor: Colors.green,
                   colorText: Colors.white,

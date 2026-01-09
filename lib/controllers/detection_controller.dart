@@ -7,6 +7,7 @@ import '../models/parent_settings.dart';
 import '../services/monitoring/content_trigger_service.dart';
 import '../views/widgets/content_block_popup.dart';
 import '../views/screens/education/psychoeducation_screen.dart';
+import '../views/screens/chatbot/ai_chatbot_screen.dart';
 
 /// Controller untuk manajemen deteksi konten dan popup blocking
 class DetectionController extends GetxController {
@@ -199,7 +200,8 @@ class DetectionController extends GetxController {
       detection: detection,
       parentSettings: parentSettings.value,
       onPsychoeducationTap: () {
-        Get.to(() => PsychoeducationScreen(detection: detection));
+        // Redirect to AI Chatbot for counseling instead of static page
+        Get.to(() => AiChatbotScreen(initialDetection: detection));
       },
       onPinEntered: (pin) async {
         await _handlePinOverride(detection, pin);
@@ -219,11 +221,12 @@ class DetectionController extends GetxController {
       icon: Icon(Icons.warning_amber_rounded, color: Colors.white),
       mainButton: TextButton(
         onPressed: () {
-          Get.back();
-          Get.to(() => PsychoeducationScreen(detection: detection));
+          Get.back(); // Close snackbar
+          // Redirect to AI Chatbot for counseling
+          Get.to(() => AiChatbotScreen(initialDetection: detection));
         },
         child: const Text(
-          'Pelajari',
+          'Chat AIra',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -435,5 +438,158 @@ class DetectionController extends GetxController {
     } catch (e) {
       debugPrint('❌ Error clearing history: $e');
     }
+  }
+
+  /// Toggle monitoring with PIN check if needed
+  Future<void> toggleMonitoringWithPin(BuildContext context) async {
+    if (isMonitoring.value) {
+      // Trying to STOP monitoring
+      if (parentSettings.value?.isParentModeEnabled == true) {
+        // Require PIN to stop
+        final pinController = TextEditingController();
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Masukkan PIN Orang Tua'),
+            content: TextField(
+              controller: pinController,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: const InputDecoration(
+                hintText: 'PIN',
+                counterText: '',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (parentSettings.value?.verifyPin(pinController.text) ==
+                      true) {
+                    Get.back(); // close dialog
+                    stopMonitoring();
+                    Get.snackbar(
+                      'Monitoring Berhenti',
+                      'Pemantauan telah dinonaktifkan oleh orang tua',
+                      backgroundColor: Colors.orange,
+                      colorText: Colors.white,
+                    );
+                  } else {
+                    Get.snackbar(
+                      'Error',
+                      'PIN Salah',
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                    );
+                  }
+                },
+                child: const Text('Verifikasi'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // No PIN needed to stop
+        stopMonitoring();
+      }
+    } else {
+      // Trying to START monitoring - Check if PIN is set first
+      final hasPin =
+          parentSettings.value?.pin != null &&
+          parentSettings.value!.pin!.isNotEmpty;
+
+      if (!hasPin) {
+        // Cannot start without PIN
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('PIN Belum Diset'),
+            content: const Text(
+              'Anda harus mengatur PIN terlebih dahulu sebelum mengaktifkan monitoring. '
+              'Silakan set PIN di menu Pengaturan Mode Orang Tua.',
+            ),
+            actions: [
+              TextButton(onPressed: () => Get.back(), child: const Text('OK')),
+              ElevatedButton(
+                onPressed: () {
+                  Get.back();
+                  // Navigate to settings to set PIN
+                  Get.snackbar(
+                    'Info',
+                    'Buka Pengaturan → PIN Proteksi untuk mengatur PIN',
+                    backgroundColor: Colors.blue,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 3),
+                  );
+                },
+                child: const Text('Ke Pengaturan'),
+              ),
+            ],
+          ),
+        );
+        return; // Don't start monitoring
+      }
+
+      // PIN is set, can start monitoring
+      _startMonitoring();
+      Get.snackbar(
+        'Monitoring Aktif',
+        'Pemantauan konten aktif. PIN diperlukan untuk menonaktifkan.',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  /// Get top detected apps
+  Map<String, double> getTopApps() {
+    if (detectionHistory.isEmpty) return {};
+
+    final appCounts = <String, int>{};
+    for (final start in detectionHistory) {
+      appCounts[start.appName] = (appCounts[start.appName] ?? 0) + 1;
+    }
+
+    final total = detectionHistory.length;
+    final appPercentages = <String, double>{};
+
+    // Sort by count desc
+    final sortedKeys = appCounts.keys.toList()
+      ..sort((a, b) => appCounts[b]!.compareTo(appCounts[a]!));
+
+    for (final app in sortedKeys.take(3)) {
+      appPercentages[app] = (appCounts[app]! / total) * 100;
+    }
+
+    return appPercentages;
+  }
+
+  /// Get last detection
+  RiskDetection? getLastDetection() {
+    if (detectionHistory.isEmpty) return null;
+    return detectionHistory.first;
+  }
+
+  /// Get 7 days trend (daily counts)
+  List<int> get7DaysTrend() {
+    final now = DateTime.now();
+    final trend = <int>[];
+    for (int i = 6; i >= 0; i--) {
+      final day = now.subtract(Duration(days: i));
+      final count = detectionHistory
+          .where(
+            (d) =>
+                d.detectedAt.year == day.year &&
+                d.detectedAt.month == day.month &&
+                d.detectedAt.day == day.day,
+          )
+          .length;
+      trend.add(count);
+    }
+    return trend;
   }
 }

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../models/risk_detection.dart';
 
 class AiChatbotScreen extends StatefulWidget {
-  const AiChatbotScreen({super.key});
+  final RiskDetection? initialDetection;
+
+  const AiChatbotScreen({super.key, this.initialDetection});
 
   @override
   State<AiChatbotScreen> createState() => _AiChatbotScreenState();
@@ -17,15 +20,59 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
   @override
   void initState() {
     super.initState();
-    // Welcome message
-    _messages.add(
-      ChatMessage(
-        text:
-            'Halo! Saya AIra, asisten digital yang siap membantu kamu! Apakah ada yang ingin kamu tanyakan tentang keamanan internet?',
-        isUser: false,
-        timestamp: DateTime.now(),
-      ),
-    );
+    _initializeChat();
+  }
+
+  void _initializeChat() {
+    if (widget.initialDetection != null) {
+      // SCENARIO: Masuk dari trigger deteksi (Counseling Mode)
+      final detection = widget.initialDetection!;
+      _messages.add(
+        ChatMessage(
+          text: _generateInitialCounselingMessage(detection),
+          isUser: false,
+          timestamp: DateTime.now(),
+        ),
+      );
+    } else {
+      // SCENARIO: Masuk manual (General Assistant Mode)
+      _messages.add(
+        ChatMessage(
+          text:
+              'Halo! Saya AIra, asisten digital yang siap membantu kamu! Apakah ada yang ingin kamu tanyakan tentang keamanan internet?',
+          isUser: false,
+          timestamp: DateTime.now(),
+        ),
+      );
+    }
+  }
+
+  String _generateInitialCounselingMessage(RiskDetection detection) {
+    String riskContext = '';
+    String cbtQuestion = '';
+
+    switch (detection.riskLevel) {
+      case RiskLevel.high:
+        riskContext =
+            'Sistem mendeteksi akses ke konten **${detection.detectedContent}** di aplikasi **${detection.appName}**. \n\n⚠️ **Kenapa ini diblokir?**\nKonten ini memiliki risiko tinggi yang dapat mempengaruhi persepsi dan kesehatan mental kamu dalam jangka panjang.';
+        cbtQuestion =
+            'Saya tidak di sini untuk memarahimu, tapi untuk mengerti. Apakah kamu membuka ini karena rasa penasaran, atau sedang ada pikiran yang mengganggu?';
+        break;
+      case RiskLevel.medium:
+        riskContext =
+            'Saya melihat aktivitas yang mungkin kurang aman di **${detection.appName}** (${detection.detectedContent}). \n\n⚠️ **Peringatan:**\nAlgoritma mendeteksi pola yang sering mengarah pada konten tidak sehat atau pemborosan waktu produktif.';
+        cbtQuestion =
+            'Biasanya orang mengakses ini saat sedang bosan atau stres. Bagaimana perasaanmu saat ini?';
+        break;
+      case RiskLevel.low:
+        riskContext =
+            'Hati-hati, terdeteksi potensi risiko ringan di **${detection.appName}**. Tetap waspada dengan siapa kamu berinteraksi ya.';
+        cbtQuestion =
+            'Apakah kamu yakin konten ini aman? Mari kita diskusi sebentar jika kamu ragu.';
+        break;
+    }
+
+    return '$riskContext\n\n$cbtQuestion';
   }
 
   @override
@@ -55,7 +102,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
       setState(() {
         _messages.add(
           ChatMessage(
-            text: _getMockAiResponse(text),
+            text: _getAiResponse(text),
             isUser: false,
             timestamp: DateTime.now(),
           ),
@@ -66,8 +113,33 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
     });
   }
 
-  String _getMockAiResponse(String userMessage) {
+  String _getAiResponse(String userMessage) {
     final lowerMsg = userMessage.toLowerCase();
+
+    // --- CONTEXT: Jika sedang dalam sesi counseling (ada initialDetection) ---
+    if (widget.initialDetection != null) {
+      // Respon empati untuk jawaban user tentang perasaan/alasan
+      if (lowerMsg.contains('penasaran') ||
+          lowerMsg.contains('coba') ||
+          lowerMsg.contains('iseng')) {
+        return '🤔 **Memahami Rasa Penasaran**\n\nRasa penasaran itu wajar, manusiawi kok. Tapi di internet, "hanya melihat" bisa memicu algoritma untuk terus menyuguhkan konten serupa yang makin ekstrem.\n\n💡 **Saran:**\nCoba alihkan rasa penasaranmu ke hal lain yang lebih seru tapi aman. Suka game atau eksperimen sains? Saya bisa carikan rekomendasi!';
+      }
+
+      if (lowerMsg.contains('stres') ||
+          lowerMsg.contains('capek') ||
+          lowerMsg.contains('lelah') ||
+          lowerMsg.contains('bosan')) {
+        return '🤗 **Pelukan Virtual untuk Kamu**\n\nTerima kasih sudah jujur. Menggunakan internet sebagai pelarian saat stres/bosan adalah mekanisme koping yang umum, tapi seringkali hanya memberikan kelegaan sesaat.\n\n🧠 **Teknik CBT Cepat:**\nMari coba teknik "STOP":\n**S** - Stop aktivitasmu\n**T** - Take a breath (tarik napas dalam)\n**O** - Observe (amati perasaanmu)\n**P** - Proceed (lanjutkan dengan aktivitas positif)\n\nMau kita coba latihan napas sebentar?';
+      }
+
+      if (lowerMsg.contains('maaf') ||
+          lowerMsg.contains('salah') ||
+          lowerMsg.contains('tidak tahu')) {
+        return 'Tidak perlu minta maaf ke saya. 😊 Yang penting kamu sadar dan mau memperbaiki. \n\nIni adalah proses belajar. Ke depannya, jika muncul notifikasi seperti ini lagi, ingatlah percakapan kita ini ya. You represent your own safety!';
+      }
+    }
+
+    // --- CONTEXT: General Chat (Sama seperti sebelumnya) ---
 
     // Greeting
     if (lowerMsg.contains('halo') ||
@@ -88,7 +160,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
       return '📈 **Analisis Tren Perilaku**\n\n7 Hari Terakhir:\n• Total deteksi: 45\n• Puncak aktivitas: Malam (20:00-23:00)\n• Aplikasi tersering: Instagram, YouTube\n• Risk level: 60% Low, 30% Medium, 10% High\n\n🎯 **Insight:**\nKamu cenderung terpapar lebih banyak saat lelah atau menjelang tidur. Ini pola umum yang bisa dicegah dengan:\n\n1. Set "digital curfew" jam 22:00\n2. Ganti scrolling dengan aktivitas relaksasi\n3. Gunakan mode fokus saat belajar/kerja\n\nMau saya buatkan action plan?';
     }
 
-    // CBT Counseling
+    // CBT Counseling General
     if (lowerMsg.contains('stres') ||
         lowerMsg.contains('bosan') ||
         lowerMsg.contains('susah')) {
@@ -124,8 +196,8 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
       return 'Sama-sama! Senang bisa membantu. 🌟\n\nJangan ragu untuk chat kapan saja kamu:\n• Butuh support\n• Ingin analisis data\n• Mau curhat\n• Cari saran aktivitas\n\nI\'m here for you! Stay strong! 💪✨';
     }
 
-    // Default
-    return 'Terima kasih atas pertanyaannya! 🤗\n\nSaya di sini untuk membantu kamu dengan:\n• Analisis deteksi & tren\n• Edukasi risiko konten\n• Mini-counseling CBT\n• Saran aktivitas alternatif\n• Support & motivation\n\nCoba tanyakan tentang:\n"Kenapa YouTube sering terdeteksi?"\n"Bagaimana tren deteksi saya?"\n"Tips untuk kontrol digital?"\n\nAda yang ingin kamu bahas?';
+    // Default Fallback
+    return 'Terima kasih atas responsnya! 🤗\n\nSaya di sini untuk mendukungmu. Jika ada hal lain yang ingin diceritakan atau ditanyakan seputar keamanan digital dan kesehatan mental, silakan ketik di sini ya.';
   }
 
   void _scrollToBottom() {
@@ -170,64 +242,71 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
                   ),
                   child: Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.smart_toy_rounded,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'AIra Assistant',
-                            style: GoogleFonts.outfit(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
                             ),
                           ),
-                          Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF4ADE80),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF4ADE80,
-                                      ).withOpacity(0.5),
-                                      blurRadius: 4,
-                                      spreadRadius: 1,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Online',
-                                style: GoogleFonts.raleway(
-                                  color: Colors.white.withOpacity(0.9),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
+                          child: const Icon(
+                            Icons.smart_toy_rounded,
+                            color: Colors.white,
+                            size: 24, // Slightly smaller than logo
                           ),
-                        ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'AIra Assistant',
+                              style: GoogleFonts.outfit(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF4ADE80),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFF4ADE80,
+                                        ).withOpacity(0.5),
+                                        blurRadius: 4,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  widget.initialDetection != null
+                                      ? 'Counseling Mode'
+                                      : 'Online',
+                                  style: GoogleFonts.raleway(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -470,7 +549,7 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
                   fontSize: 16,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Tanya sesuatu...',
+                  hintText: 'Tulis pesan...',
                   hintStyle: GoogleFonts.raleway(
                     color: const Color(0xFF94A3B8),
                     fontSize: 15,

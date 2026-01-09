@@ -33,38 +33,71 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   void _addSampleNotifications() {
+    // High Risk Notifications
     _historyService.addThreatNotification(
       threatLevel: 'high',
       appName: 'TikTok',
-      contentType: 'Konten eksplisit',
-      action: 'Aplikasi di Blokir',
+      contentType: 'Konten Dewasa Eksplisit',
+      action: 'Aplikasi Diblokir Otomatis',
+    );
+
+    _historyService.addThreatNotification(
+      threatLevel: 'high',
+      appName: 'Instagram',
+      contentType: 'Percakapan Mencurigakan',
+      action: 'Konten Diblokir',
+    );
+
+    // Medium Risk Notifications
+    _historyService.addThreatNotification(
+      threatLevel: 'medium',
+      appName: 'YouTube',
+      contentType: 'Video Konten Dewasa',
+      action: 'Popup Peringatan Ditampilkan',
     );
 
     _historyService.addThreatNotification(
       threatLevel: 'medium',
-      appName: 'YouTube',
-      contentType: 'Video konten dewasa',
-      action: 'Peringatan Ditampilkan',
+      appName: 'TikTok',
+      contentType: 'Komentar Tidak Pantas',
+      action: 'Warning Diberikan',
     );
 
-    _historyService.addMonitoringNotification(isActive: true);
-
+    // Low Risk Notifications
     _historyService.addThreatNotification(
       threatLevel: 'low',
       appName: 'Instagram',
-      contentType: 'Thumbnail tidak pantas',
-      action: 'Konten Terdeteksi',
+      contentType: 'Thumbnail Kurang Pantas',
+      action: 'Konten Terdeteksi, Tidak Diblokir',
+    );
+
+    _historyService.addThreatNotification(
+      threatLevel: 'low',
+      appName: 'YouTube',
+      contentType: 'Kata Kunci Sensitif',
+      action: 'Dipantau',
+    );
+
+    // System Notifications
+    _historyService.addMonitoringNotification(isActive: true);
+
+    // Additional monitoring notification
+    _historyService.addThreatNotification(
+      threatLevel: 'medium',
+      appName: 'System',
+      contentType: 'Percobaan Akses Aplikasi Terlarang',
+      action: 'Akses Ditolak',
     );
   }
 
   Color _getLevelColor(String level) {
     switch (level) {
       case 'high':
-        return Colors.red;
+        return Colors.red.shade600;
       case 'medium':
-        return Colors.orange;
+        return Colors.orange.shade600;
       case 'low':
-        return Colors.blue;
+        return const Color(0xFFEAB308); // Yellow for consistency
       default:
         return Colors.grey;
     }
@@ -73,11 +106,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
   String _getLevelLabel(String level) {
     switch (level) {
       case 'high':
-        return 'Tinggi';
+        return 'High';
       case 'medium':
-        return 'Sedang';
+        return 'Medium';
       case 'low':
-        return 'Rendah';
+        return 'Low';
       default:
         return 'Unknown';
     }

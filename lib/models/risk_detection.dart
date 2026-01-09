@@ -16,6 +16,8 @@ class RiskDetection {
   final String detectedContent;
   final DateTime detectedAt;
   final bool isBlocked;
+  final String
+  actionTaken; // 'blocked', 'ignored', 'continued', 'warning_shown'
   final List<String> triggers; // Content triggers yang terdeteksi
 
   RiskDetection({
@@ -26,6 +28,7 @@ class RiskDetection {
     required this.detectedContent,
     required this.detectedAt,
     this.isBlocked = false,
+    this.actionTaken = 'pending',
     this.triggers = const [],
   });
 
@@ -33,7 +36,7 @@ class RiskDetection {
   Color getRiskColor() {
     switch (riskLevel) {
       case RiskLevel.low:
-        return Colors.yellow.shade700;
+        return const Color(0xFFEAB308); // Yellow-600
       case RiskLevel.medium:
         return Colors.orange.shade600;
       case RiskLevel.high:
@@ -89,6 +92,7 @@ class RiskDetection {
           ? DateTime.parse(json['detected_at'])
           : DateTime.now(),
       isBlocked: json['is_blocked'] ?? false,
+      actionTaken: json['action_taken'] ?? 'pending',
       triggers: json['triggers'] != null
           ? List<String>.from(json['triggers'])
           : [],
@@ -105,6 +109,7 @@ class RiskDetection {
       'detected_content': detectedContent,
       'detected_at': detectedAt.toIso8601String(),
       'is_blocked': isBlocked,
+      'action_taken': actionTaken,
       'triggers': triggers,
     };
   }
@@ -132,6 +137,7 @@ class RiskDetection {
     String? detectedContent,
     DateTime? detectedAt,
     bool? isBlocked,
+    String? actionTaken,
     List<String>? triggers,
   }) {
     return RiskDetection(
@@ -142,6 +148,7 @@ class RiskDetection {
       detectedContent: detectedContent ?? this.detectedContent,
       detectedAt: detectedAt ?? this.detectedAt,
       isBlocked: isBlocked ?? this.isBlocked,
+      actionTaken: actionTaken ?? this.actionTaken,
       triggers: triggers ?? this.triggers,
     );
   }
